@@ -230,12 +230,27 @@ sub _run_fixhomedirperms {
         /usr/local/cpanel/scripts/fixhomedirperms
     );
 
+    # Escolhe o primeiro que existir (usa -e em vez de -x porque o -x
+    # pode falhar sob cpsrvd dependendo do contexto, mas como o CGI
+    # roda como root é seguro tentar executar mesmo sem bit x do stat).
     my $script;
+    my @diag;
     for my $c (@candidates) {
-        if ( -x $c ) { $script = $c; last; }
+        if ( -e $c ) {
+            $script = $c;
+            last;
+        }
+        push @diag, "$c (stat: $!)";
     }
-    return ( "Script não encontrado em " . join( ', ', @candidates ), undef )
-        unless $script;
+
+    unless ($script) {
+        my $uid = getpwuid($<) // "uid=$<";
+        return (
+            "Script não encontrado. Contexto: euid=$>, uid=$<, usuário=$uid. "
+                . "Tentados: " . join( '; ', @diag ),
+            undef
+        );
+    }
 
     # Abre pipe sem shell (lista de args). Evita problemas de PATH do CGI.
     my $pid = open( my $fh, '-|' );
@@ -245,7 +260,7 @@ sub _run_fixhomedirperms {
         # Filho — redireciona stderr pra stdout e executa
         open STDERR, '>&', \*STDOUT;
         exec( $script, $user ) or do {
-            print "exec falhou: $!\n";
+            print "exec falhou em $script: $!\n";
             exit 127;
         };
     }

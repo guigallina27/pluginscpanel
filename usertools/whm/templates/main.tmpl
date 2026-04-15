@@ -38,9 +38,16 @@
   color: var(--ut-text);
   font-size: 14px;
   line-height: 1.5;
-  padding: 24px 16px;
-  max-width: 860px;
-  margin: 0 auto;
+  padding: 24px;
+  width: 100%;
+}
+.ut-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+@media (min-width: 1100px) {
+  .ut-grid { grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); }
 }
 @media (prefers-color-scheme: dark) {
   .ut-scope {
@@ -344,9 +351,64 @@
   animation: ut-spin 0.6s linear infinite;
 }
 @keyframes ut-spin { to { transform: rotate(360deg); } }
+
+/* Painel lateral com estatísticas e dicas */
+.ut-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ut-stat-card {
+  background: var(--ut-bg);
+  border: 1px solid var(--ut-border);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: var(--ut-shadow);
+}
+.ut-stat-card h3 {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ut-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ut-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ut-border);
+  font-size: 13px;
+}
+.ut-stat-row:last-child { border-bottom: none; }
+.ut-stat-label { color: var(--ut-text-dim); }
+.ut-stat-value { font-weight: 600; color: var(--ut-text); }
+
+.ut-help {
+  background: var(--ut-bg-alt);
+  border: 1px solid var(--ut-border);
+  border-radius: 14px;
+  padding: 18px;
+  font-size: 13px;
+  color: var(--ut-text-dim);
+}
+.ut-help h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ut-text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ut-help ul { margin: 0; padding-left: 18px; }
+.ut-help li { margin-bottom: 6px; }
+.ut-help li strong { color: var(--ut-text); }
 </style>
 
 <div class="ut-scope">
+  <div class="ut-grid">
   <div class="ut-card">
     <header class="ut-card-head">
       <div class="ut-card-head-icon"><i class="bi bi-tools" aria-hidden="true"></i></div>
@@ -416,6 +478,33 @@
       <div id="ut-result" class="ut-result" role="status" aria-live="polite"></div>
     </div>
   </div>
+
+  <aside class="ut-sidebar">
+    <div class="ut-stat-card">
+      <h3>Resumo</h3>
+      <div class="ut-stat-row">
+        <span class="ut-stat-label">Contas disponíveis</span>
+        <span class="ut-stat-value" id="ut-stat-count">—</span>
+      </div>
+      <div class="ut-stat-row">
+        <span class="ut-stat-label">Seu perfil</span>
+        <span class="ut-stat-value">[% data.role_label | html %]</span>
+      </div>
+      <div class="ut-stat-row">
+        <span class="ut-stat-label">Conta selecionada</span>
+        <span class="ut-stat-value" id="ut-stat-chosen">—</span>
+      </div>
+    </div>
+
+    <div class="ut-help">
+      <h3><i class="bi bi-info-circle" aria-hidden="true"></i> Quando usar</h3>
+      <ul>
+        <li><strong>Finalizar Processos:</strong> site travado, consumo alto de memória ou processos pendurados.</li>
+        <li><strong>Corrigir Permissões:</strong> erros 403 após restore, upload via SSH ou mudanças manuais de owner.</li>
+      </ul>
+    </div>
+  </aside>
+  </div>
 </div>
 
 <script>
@@ -436,6 +525,8 @@
   var btnKill    = document.getElementById('ut-btn-kill');
   var btnFix     = document.getElementById('ut-btn-fix');
   var result     = document.getElementById('ut-result');
+  var statCount  = document.getElementById('ut-stat-count');
+  var statChosen = document.getElementById('ut-stat-chosen');
 
   var accounts   = [];   // [{user, domain}, ...]
   var filtered   = [];
@@ -546,6 +637,7 @@
     combo.style.display = 'none';
     btnKill.disabled = false;
     btnFix.disabled  = false;
+    if (statChosen) statChosen.textContent = u.user;
     clearResult();
     closeList();
   }
@@ -558,6 +650,7 @@
     btnFix.disabled  = true;
     input.value = '';
     combo.classList.remove('has-value');
+    if (statChosen) statChosen.textContent = '—';
     clearResult();
     setTimeout(function() { input.focus(); }, 0);
   }
@@ -652,6 +745,7 @@
       ? 'Buscar por usuário ou domínio...'
       : 'Nenhuma conta disponível';
     filtered = accounts.slice();
+    if (statCount) statCount.textContent = accounts.length;
   }).catch(function(e) {
     input.placeholder = 'Erro ao carregar contas';
     showResult(false, e.message || String(e));

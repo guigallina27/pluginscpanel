@@ -71,10 +71,13 @@ echo "  - Registrando AppConfig (cPanel)"
 
 # --- Feature Manager ---------------------------------------------------------
 # Registra a feature no Feature Manager do WHM (aparece na UI) e habilita
-# por padrão na feature list "default" (usada pelos planos existentes).
+# por padrão nas feature lists existentes (usadas pelos planos).
 ADDON_FEATURES_DIR="/usr/local/cpanel/whostmgr/addonfeatures"
 if [[ -d "${ADDON_FEATURES_DIR}" ]]; then
-    install -o root -g root -m 0644 /dev/null "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
+    # O arquivo contém o displayname mostrado no Feature Manager
+    echo "Ferramentas do Usuário" > "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
+    chown root:root "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
+    chmod 0644 "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
     echo "  - Feature '${PLUGIN_NAME}' registrada no Feature Manager"
 fi
 
@@ -85,7 +88,6 @@ if [[ -d "${FEATURES_DIR}" ]]; then
     shopt -s nullglob
     for flist in "${FEATURES_DIR}"/*; do
         [[ -f "$flist" ]] || continue
-        # Skip arquivos não-feature (locking, caches)
         case "$(basename "$flist")" in
             *.lock|*.cache|*.swp) continue ;;
         esac
@@ -97,9 +99,15 @@ if [[ -d "${FEATURES_DIR}" ]]; then
     echo "  - Feature habilitada em todas as feature lists"
 fi
 
-# --- Limpeza de cache --------------------------------------------------------
-echo "  - Limpando caches"
+# --- Limpeza de cache + reload -----------------------------------------------
+echo "  - Limpando caches e recarregando cpsrvd"
 /usr/local/cpanel/scripts/rebuild_sprites 2>/dev/null || true
+
+# Força recarga do Feature Manager e do chrome do WHM/cPanel.
+# cpsrvd serve tanto WHM quanto cPanel; o restart é quase instantâneo.
+if [[ -x /usr/local/cpanel/scripts/restartsrv_cpsrvd ]]; then
+    /usr/local/cpanel/scripts/restartsrv_cpsrvd >/dev/null 2>&1 || true
+fi
 
 echo ""
 echo "==> Instalação concluída."

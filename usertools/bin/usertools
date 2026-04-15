@@ -104,7 +104,7 @@ sub _run_fixhomedirperms {
     );
     my $script;
     for my $c (@candidates) {
-        if ( -x $c ) { $script = $c; last; }
+        if ( -e $c ) { $script = $c; last; }
     }
     return ( "Script não encontrado", undef ) unless $script;
 
