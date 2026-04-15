@@ -12,6 +12,8 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 .ut {
   --ut-bg:         #FFFFFF;
   --ut-bg-alt:     #F8FAFC;
@@ -21,23 +23,26 @@
   --ut-text-mute:  #94A3B8;
   --ut-border:     #E2E8F0;
   --ut-border-str: #CBD5E1;
-  --ut-accent:     #2563EB;
-  --ut-accent-dim: #EFF6FF;
-  --ut-accent-dk:  #1D4ED8;
-  --ut-danger:     #DC2626;
-  --ut-danger-dim: #FEF2F2;
-  --ut-danger-dk:  #B91C1C;
-  --ut-warn:       #D97706;
-  --ut-warn-dim:   #FFFBEB;
-  --ut-success:    #16A34A;
-  --ut-success-dim:#F0FDF4;
+  --ut-accent:     #8b5cf6; /* Violet */
+  --ut-accent-hover:#7c3aed;
+  --ut-sapphire:   #4f46e5; /* Sapphire Blue */
+  --ut-sapphire-hover: #4338ca;
+  --ut-danger:     #ef4444;
+  --ut-danger-dim: rgba(239, 68, 68, 0.1);
+  --ut-danger-dk:  #dc2626;
+  --ut-warn:       #f59e0b;
+  --ut-warn-dim:   rgba(245, 158, 11, 0.15);
+  --ut-success:    #10b981;
+  --ut-success-dim:rgba(16, 185, 129, 0.1);
 
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--ut-text);
   font-size: 14px;
-  line-height: 1.55;
-  padding: 32px 40px 48px;
+  line-height: 1.6;
+  padding: 32px;
   width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 @media (max-width: 720px) {
   .ut { padding: 20px 16px 32px; }
@@ -52,10 +57,6 @@
     --ut-text-mute:  #64748B;
     --ut-border:     #1E293B;
     --ut-border-str: #334155;
-    --ut-accent-dim: rgba(37, 99, 235, 0.15);
-    --ut-danger-dim: rgba(220, 38, 38, 0.12);
-    --ut-warn-dim:   rgba(217, 119, 6, 0.12);
-    --ut-success-dim:rgba(22, 163, 74, 0.12);
   }
 }
 .ut, .ut * { box-sizing: border-box; }
@@ -64,19 +65,20 @@
 .ut-page-header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding-bottom: 20px;
+  gap: 18px;
+  padding-bottom: 24px;
   margin-bottom: 28px;
   border-bottom: 1px solid var(--ut-border);
 }
 .ut-page-icon {
-  width: 48px; height: 48px;
-  border-radius: 12px;
-  background: var(--ut-accent-dim);
-  color: var(--ut-accent);
-  font-size: 24px;
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--ut-accent), var(--ut-sapphire));
+  color: #fff;
+  font-size: 26px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
 }
 .ut-page-text { flex: 1; min-width: 0; }
 .ut-page-title {
@@ -96,14 +98,15 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: var(--ut-accent-dim);
-  color: var(--ut-accent);
-  border-radius: 8px;
+  background: rgba(79, 70, 229, 0.1);
+  color: var(--ut-sapphire);
+  border-radius: 20px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   flex-shrink: 0;
+  border: 1px solid rgba(79, 70, 229, 0.2);
 }
 
 /* Alert */
@@ -111,11 +114,11 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 14px 18px;
+  padding: 16px 20px;
   background: var(--ut-warn-dim);
-  border: 1px solid color-mix(in srgb, var(--ut-warn) 25%, transparent);
-  border-radius: 10px;
-  font-size: 13px;
+  border-left: 4px solid var(--ut-warn);
+  border-radius: 8px;
+  font-size: 14px;
   color: var(--ut-text);
   margin-bottom: 32px;
 }
@@ -125,19 +128,26 @@
   flex-shrink: 0;
   margin-top: 1px;
 }
-.ut-alert strong { font-weight: 600; }
+.ut-alert strong { font-weight: 600; color: var(--ut-text); }
 
 /* Seções */
-.ut-section { margin-bottom: 32px; }
+.ut-section { 
+  margin-bottom: 32px;
+  background: var(--ut-bg);
+  border: 1px solid var(--ut-border);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+}
 .ut-section-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   gap: 16px;
 }
 .ut-section-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -145,6 +155,7 @@
 }
 .ut-section-hint {
   font-size: 13px;
+  font-weight: 500;
   color: var(--ut-text-mute);
 }
 
@@ -153,68 +164,69 @@
 .ut-combo-input { position: relative; display: flex; align-items: center; }
 .ut-combo-input > i.bi-search {
   position: absolute;
-  left: 14px;
+  left: 16px;
   color: var(--ut-text-mute);
-  font-size: 16px;
+  font-size: 18px;
   pointer-events: none;
 }
 .ut-input {
   width: 100%;
-  padding: 12px 40px 12px 42px;
-  background: var(--ut-bg);
-  border: 1px solid var(--ut-border-str);
-  border-radius: 10px;
+  padding: 14px 40px 14px 44px;
+  background: var(--ut-bg-alt);
+  border: 1px solid var(--ut-border);
+  border-radius: 12px;
   color: var(--ut-text);
   font-size: 15px;
   font-family: inherit;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: all 0.2s ease;
 }
-.ut-input::placeholder { color: var(--ut-text-mute); }
+.ut-input::placeholder { color: var(--ut-text-mute); font-weight: 400; }
 .ut-input:focus {
   outline: none;
-  border-color: var(--ut-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ut-accent) 18%, transparent);
+  background: var(--ut-bg);
+  border-color: var(--ut-sapphire);
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
 }
-.ut-input:disabled { background: var(--ut-bg-alt); cursor: not-allowed; }
+.ut-input:disabled { background: var(--ut-bg-alt); cursor: not-allowed; opacity: 0.7; }
 .ut-combo-clear {
-  position: absolute; right: 10px;
-  width: 26px; height: 26px;
+  position: absolute; right: 12px;
+  width: 28px; height: 28px;
   border: none;
   background: transparent;
   color: var(--ut-text-mute);
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 8px;
   display: none;
   align-items: center; justify-content: center;
-  font-size: 13px;
+  font-size: 16px;
 }
-.ut-combo-clear:hover { background: var(--ut-bg-hover); color: var(--ut-text); }
+.ut-combo-clear:hover { background: var(--ut-border); color: var(--ut-text); }
 .ut-combo.has-value .ut-combo-clear { display: flex; }
 .ut-list {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   left: 0; right: 0;
   background: var(--ut-bg);
-  border: 1px solid var(--ut-border-str);
-  border-radius: 10px;
-  box-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.2), 0 4px 10px -2px rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--ut-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.25), 0 4px 10px -2px rgba(15, 23, 42, 0.1);
   max-height: 320px;
   overflow-y: auto;
   z-index: 20;
   list-style: none;
   margin: 0;
-  padding: 6px;
+  padding: 8px;
 }
 .ut-list[hidden] { display: none; }
 .ut-list-item {
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: 8px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  transition: background 0.1s;
+  transition: background 0.15s;
 }
 .ut-list-item:hover,
 .ut-list-item.ut-focused { background: var(--ut-bg-hover); }
@@ -245,22 +257,22 @@
 .ut-selected {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
-  background: var(--ut-accent-dim);
-  border: 1px solid color-mix(in srgb, var(--ut-accent) 20%, transparent);
-  border-radius: 10px;
+  gap: 16px;
+  padding: 18px 20px;
+  background: linear-gradient(145deg, rgba(79, 70, 229, 0.05), rgba(139, 92, 246, 0.05));
+  border: 1px solid rgba(79, 70, 229, 0.2);
+  border-radius: 12px;
 }
 .ut-selected[hidden] { display: none; }
 .ut-selected > i.bi-check-circle-fill {
-  color: var(--ut-accent);
-  font-size: 20px;
+  color: var(--ut-sapphire);
+  font-size: 24px;
   flex-shrink: 0;
 }
 .ut-selected-info { flex: 1; min-width: 0; }
 .ut-selected-user {
   font-weight: 700;
-  font-size: 15px;
+  font-size: 16px;
   color: var(--ut-text);
 }
 .ut-selected-domain {
@@ -271,78 +283,103 @@
 .ut-btn-link {
   background: none;
   border: none;
-  color: var(--ut-accent);
+  color: var(--ut-sapphire);
   font-weight: 600;
   cursor: pointer;
-  font-size: 13px;
-  padding: 6px 10px;
-  border-radius: 6px;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
   font-family: inherit;
+  transition: all 0.2s;
 }
-.ut-btn-link:hover { background: color-mix(in srgb, var(--ut-accent) 10%, transparent); }
+.ut-btn-link:hover { background: rgba(79, 70, 229, 0.1); }
 
 /* Botões de ação */
 .ut-actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   flex-wrap: wrap;
+  margin-top: 8px;
 }
-.ut-actions .ut-btn { flex: 1 1 240px; }
+.ut-actions .ut-btn { flex: 1 1 200px; }
 .ut-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 13px 22px;
+  padding: 14px 24px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 15px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
 }
-.ut-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.ut-btn i { font-size: 17px; }
-.ut-btn-primary { background: var(--ut-accent); color: #fff; }
-.ut-btn-primary:hover:not(:disabled) { background: var(--ut-accent-dk); }
+.ut-btn:active { transform: scale(0.98); }
+.ut-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.ut-btn i { font-size: 18px; }
+
+.ut-btn-primary { 
+  background: linear-gradient(to right, var(--ut-sapphire), var(--ut-accent)); 
+  color: #fff; 
+  box-shadow: 0 2px 10px rgba(79, 70, 229, 0.2);
+}
+.ut-btn-primary:hover:not(:disabled) { 
+  background: linear-gradient(to right, var(--ut-sapphire-hover), var(--ut-accent-hover)); 
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+}
+
 .ut-btn-danger {
-  background: var(--ut-bg);
+  background: var(--ut-danger-dim);
   color: var(--ut-danger);
-  border-color: var(--ut-border-str);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 .ut-btn-danger:hover:not(:disabled) {
   background: var(--ut-danger);
   color: #fff;
-  border-color: var(--ut-danger);
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
 }
 
 /* Resultado */
 .ut-result {
   margin-top: 24px;
-  padding: 14px 18px;
-  border-radius: 10px;
+  padding: 16px 20px;
+  border-radius: 12px;
   font-size: 14px;
   display: none;
   align-items: flex-start;
   gap: 12px;
   word-break: break-word;
   line-height: 1.5;
+  animation: slideDown 0.3s ease-out;
 }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .ut-result.show { display: flex; }
 .ut-result i { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-.ut-result.success { background: var(--ut-success-dim); color: var(--ut-text); border: 1px solid color-mix(in srgb, var(--ut-success) 30%, transparent); }
-.ut-result.success i { color: var(--ut-success); }
-.ut-result.error { background: var(--ut-danger-dim); color: var(--ut-text); border: 1px solid color-mix(in srgb, var(--ut-danger) 30%, transparent); }
-.ut-result.error i { color: var(--ut-danger); }
+.ut-result.success { 
+  background: var(--ut-success-dim); 
+  color: var(--ut-success); 
+  border: 1px solid rgba(16, 185, 129, 0.2); 
+}
+.ut-result.error { 
+  background: var(--ut-danger-dim); 
+  color: var(--ut-danger); 
+  border: 1px solid rgba(239, 68, 68, 0.2); 
+}
 
 .ut-spinner {
   display: inline-block;
-  width: 15px; height: 15px;
+  width: 18px; height: 18px;
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: 50%;
-  animation: ut-spin 0.6s linear infinite;
+  animation: ut-spin 0.8s linear infinite;
 }
 @keyframes ut-spin { to { transform: rotate(360deg); } }
 </style>
@@ -363,9 +400,7 @@
   <div class="ut-alert" role="note">
     <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
     <div>
-      <strong>Atenção:</strong> finalizar processos interrompe PHP-FPM, cron, SSH
-      e aplicações do usuário. Corrigir permissões reescreve owner/grupo e modos
-      do diretório home — pode levar alguns segundos em contas grandes.
+      <strong>Atenção:</strong> finalizar processos interrompe PHP-FPM, cron, SSH e aplicações do usuário. Corrigir permissões reescreve owner/grupo e modos do diretório home.
     </div>
   </div>
 
@@ -397,23 +432,23 @@
       <ul id="ut-list" class="ut-list" role="listbox" hidden></ul>
     </div>
 
-    <div id="ut-selected" class="ut-selected" style="margin-top:12px" hidden>
+    <div id="ut-selected" class="ut-selected" style="margin-top:20px" hidden>
       <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
       <div class="ut-selected-info">
         <div class="ut-selected-user" id="ut-selected-user"></div>
         <div class="ut-selected-domain" id="ut-selected-domain"></div>
       </div>
-      <button id="ut-change" type="button" class="ut-btn-link">Trocar</button>
+      <button id="ut-change" type="button" class="ut-btn-link"><i class="bi bi-arrow-repeat"></i> Trocar Alvo</button>
     </div>
   </section>
 
   <section class="ut-section">
     <div class="ut-section-head">
-      <span class="ut-section-title">Ações</span>
+      <span class="ut-section-title">Painel de Ações</span>
     </div>
     <div class="ut-actions">
       <button id="ut-btn-kill" type="button" class="ut-btn ut-btn-danger" disabled>
-        <i class="bi bi-x-octagon" aria-hidden="true"></i>
+        <i class="bi bi-power" aria-hidden="true"></i>
         Finalizar Processos
       </button>
       <button id="ut-btn-fix" type="button" class="ut-btn ut-btn-primary" disabled>
