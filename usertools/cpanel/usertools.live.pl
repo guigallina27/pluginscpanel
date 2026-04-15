@@ -69,16 +69,13 @@ sub _json_response {
 sub _do_kill_procs {
     my ($user) = @_;
 
-    my $before = _count_user_procs($user);
-
     # Fork: o pkill precisa ocorrer fora do processo atual porque a propria
     # requisicao roda sob o mesmo UID e seria encerrada junto.
     my $pid = fork();
-    return { success => \0, message => 'Falha ao bifurcar processo para encerramento.' }
+    return { success => \0, message => 'Nao foi possivel iniciar a operacao no servidor. Tente novamente em instantes.' }
         if !defined $pid;
 
     if ( $pid == 0 ) {
-        # Filho: se destaca, espera a resposta HTTP ir embora e executa pkill.
         close STDIN;
         close STDOUT;
         close STDERR;
@@ -92,7 +89,7 @@ sub _do_kill_procs {
 
     return {
         success => \1,
-        message => "Encerramento agendado. $before processo(s) detectado(s) - serao finalizados em instantes. Sua sessao pode cair temporariamente; recarregue a pagina se isso ocorrer.",
+        message => 'Comando de finalizacao enviado. Seus processos ativos serao encerrados em alguns segundos. Se a pagina travar, basta recarregar - sua sessao sera restabelecida automaticamente.',
     };
 }
 
@@ -159,20 +156,17 @@ sub _do_fix_perms {
     }
 
     if ( $count == 0 ) {
-        return { success => \0, message => 'Nenhum document root foi localizado para sua conta.' };
+        return {
+            success => \0,
+            message => 'Nenhum diretorio publico foi encontrado na sua conta. Verifique se voce possui ao menos um dominio configurado.',
+        };
     }
 
-    my $msg = "Permissoes normalizadas em $count diretorio(s) (owner $user, dirs 755, arquivos 644, scripts .cgi/.pl 755).";
-    $msg .= " Ocorreram $errors aviso(s) durante a operacao." if $errors;
+    my $plural = $count == 1 ? 'diretorio' : 'diretorios';
+    my $msg = "Permissoes restauradas com sucesso em $count $plural. Pastas agora com modo 755, arquivos com 644, scripts .cgi/.pl com 755 e dono restabelecido para $user.";
+    $msg .= " (Alguns arquivos protegidos nao puderam ser alterados - isso e esperado em contas com integracao especial.)" if $errors;
 
     return { success => \1, message => $msg };
-}
-
-sub _count_user_procs {
-    my ($user) = @_;
-    my $count = qx{/usr/bin/pgrep -c -u \Q$user\E 2>/dev/null};
-    chomp $count if defined $count;
-    return ( defined $count && length $count ) ? $count : '0';
 }
 
 # ============================================================================

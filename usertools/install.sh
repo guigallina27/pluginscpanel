@@ -61,6 +61,25 @@ install -o root -g root -m 0755 \
     "${SRC_DIR}/cpanel/usertools.live.pl" \
     "${CPANEL_FRONTEND_DIR}/usertools.live.pl"
 
+# --- Redirector /3rdparty/index.html -----------------------------------------
+# Sem este arquivo, o cPanel Jupiter retorna 404 ao navegar para
+# /frontend/jupiter/3rdparty/ (breadcrumb ou link interno do tema), o que
+# confunde o usuario ao sair do plugin. Redireciona para /frontend/jupiter/
+# (home do cPanel). O arquivo e idempotente e nao afeta outros plugins.
+PARENT_INDEX="/usr/local/cpanel/base/frontend/jupiter/3rdparty/index.html"
+if [[ -d "/usr/local/cpanel/base/frontend/jupiter/3rdparty" && ! -f "${PARENT_INDEX}" ]]; then
+    cat > "${PARENT_INDEX}" <<'HTMLEOF'
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Redirecionando...</title>
+<meta http-equiv="refresh" content="0;url=../index.html">
+<script>location.replace("../index.html");</script>
+</head><body></body></html>
+HTMLEOF
+    chown root:root "${PARENT_INDEX}"
+    chmod 0644 "${PARENT_INDEX}"
+    echo "  - Redirector /3rdparty/index.html (previne 404 ao sair do plugin)"
+fi
+
 # --- dynamicui (renderiza o icone no cPanel Jupiter) ------------------------
 # O register_appconfig sozinho NAO cria esse arquivo - sem ele, a feature
 # existe mas nenhum icone aparece na UI do usuario. Cada plugin precisa do

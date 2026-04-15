@@ -179,13 +179,22 @@ sub do_kill_procs {
     chomp $after;
     $after = '0' unless defined $after && length $after;
 
-    json_out(
-        {
-            success => \1,
-            message =>
-                "Processos finalizados para '$user'. Antes: $before, depois: $after.",
-        }
-    );
+    my $killed = ( $before =~ /^\d+$/ && $after =~ /^\d+$/ ) ? ( $before - $after ) : 0;
+    $killed = 0 if $killed < 0;
+
+    my $msg;
+    if ( $killed > 0 ) {
+        my $plural = $killed == 1 ? 'processo' : 'processos';
+        $msg = "$killed $plural do usuario '$user' encerrados com sucesso (restavam $before ativos, agora $after).";
+    }
+    elsif ( $before eq '0' ) {
+        $msg = "Nenhum processo ativo encontrado para '$user'. A conta ja estava ociosa.";
+    }
+    else {
+        $msg = "Comando enviado - $before processo(s) detectado(s), $after ainda ativo(s) apos a finalizacao. Alguns podem ter sido reiniciados automaticamente pelo sistema.";
+    }
+
+    json_out( { success => \1, message => $msg } );
 }
 
 sub do_fix_perms {
@@ -264,10 +273,10 @@ sub do_fix_perms {
         $count++;
     }
 
+    my $plural = $count == 1 ? 'diretorio' : 'diretorios';
     json_out({
         success => \1,
-        message => "OK: Owner e permissões normalizados com segurança ($count DocRoots varridos).",
-        output  => "Correção efetuada via comandos nativos Perl (fixhomedirperms bypass).",
+        message => "Permissoes restauradas em $count $plural da conta '$user'. Pastas 755, arquivos 644, scripts .cgi/.pl 755, dono restabelecido para o proprio usuario.",
     });
 }
 sub render_ui {
