@@ -1,0 +1,10 @@
+# Força LF para scripts que rodam em Linux (cPanel/WHM).
+# Sem isso, checkout no Windows transforma LF em CRLF e o shebang quebra.
+*.sh        text eol=lf
+*.pl        text eol=lf
+*.cgi       text eol=lf
+*.conf      text eol=lf
+bin/usertools text eol=lf
+
+# Resto pode seguir a configuração padrão do sistema.
+*           text=auto

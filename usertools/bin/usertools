@@ -1,0 +1,92 @@
+#!/usr/local/cpanel/3rdparty/bin/perl
+#
+# UserTools — AdminBin
+# Executado como root pelo adminbind daemon.
+#
+# O método get_caller_username() é garantido pelo cPanel — retorna o
+# usuário autenticado que originou a chamada. É IMPOSSÍVEL um usuário
+# passar outro nome aqui, o que torna seguro agir sobre $user sem
+# parâmetros externos.
+
+package Cpanel::Admin::Modules::Cpanel::usertools;
+
+use strict;
+use warnings;
+
+use POSIX ();
+
+use parent 'Cpanel::Admin::Base';
+
+use constant _actions => qw(
+    KILL_PROCS
+    FIX_PERMS
+);
+
+sub KILL_PROCS {
+    my ($self) = @_;
+    my $user = _assert_user( $self->get_caller_username() );
+
+    # Conta processos antes do kill (informativo)
+    my $before = qx{/usr/bin/pgrep -c -u \Q$user\E 2>/dev/null};
+    chomp $before if defined $before;
+    $before = '0' unless defined $before && length $before;
+
+    # Dispara o kill em um filho destacado. O cPanel LiveAPI que fez
+    # esta chamada roda como o próprio usuário — se mandarmos pkill
+    # agora, o parent morre antes de devolver o JSON pro browser.
+    # Um detour via fork+sleep garante que a resposta chegue antes.
+    my $pid = fork();
+    die "Falha no fork: $!\n" if !defined $pid;
+
+    if ( $pid == 0 ) {
+        # Filho (também root, não afetado pelo pkill -u $user)
+        close STDIN;
+        close STDOUT;
+        close STDERR;
+        open STDOUT, '>', '/dev/null';
+        open STDERR, '>', '/dev/null';
+
+        POSIX::setsid();
+
+        sleep 3;
+
+        exec( '/usr/bin/pkill', '-9', '-u', $user );
+        exit 0;    # fallback se exec falhar
+    }
+
+    return {
+        success => \1,
+        message => "Finalização iniciada ($before processos detectados). "
+            . "Sua sessão pode cair por alguns segundos — recarregue a página se isso acontecer.",
+    };
+}
+
+sub FIX_PERMS {
+    my ($self) = @_;
+    my $user = _assert_user( $self->get_caller_username() );
+
+    my $output = qx{/scripts/fixhomedirperms \Q$user\E 2>&1};
+    my $exit   = $? >> 8;
+
+    return {
+        success => $exit == 0 ? \1 : \0,
+        message => $exit == 0
+            ? "Owner e permissões corrigidos em /home/$user."
+            : "Falha ao corrigir (código $exit).",
+    };
+}
+
+# ---------------------------------------------------------------------------
+# Validação de nome de usuário.
+# Mesmo vindo do cPanel (fonte confiável), fazemos untaint explícito.
+sub _assert_user {
+    my ($user) = @_;
+    if ( !defined $user || $user !~ /^([a-z0-9_\-]{1,32})$/ ) {
+        die "Usuário inválido\n";
+    }
+    return $1;
+}
+
+__PACKAGE__->new->run() unless caller;
+
+1;
