@@ -90,14 +90,12 @@ if [[ -d "${ICON_DIR}" ]] && grep -q "^icon_base64=" "${SRC_DIR}/cpanel/usertool
     echo "  - Icone SVG em ${ICON_DEST}"
 fi
 
-# --- AdminBin ----------------------------------------------------------------
-echo "  - AdminBin em ${ADMINBIN_DIR}/${PLUGIN_NAME}"
-install -o root -g root -m 0700 \
-    "${SRC_DIR}/bin/usertools" \
-    "${ADMINBIN_DIR}/${PLUGIN_NAME}"
-install -o root -g root -m 0644 \
-    "${SRC_DIR}/bin/usertools.conf" \
-    "${ADMINBIN_DIR}/${PLUGIN_NAME}.conf"
+# --- AdminBin cleanup --------------------------------------------------------
+# Versoes anteriores usavam um AdminBin em /usr/local/cpanel/bin/admin/Cpanel/
+# que quebrava com "Can't locate object method new". A versao atual faz tudo
+# no contexto do proprio usuario (pkill do proprio UID, chmod/chown dentro do
+# home), entao removemos qualquer residuo de AdminBin.
+rm -f "${ADMINBIN_DIR}/${PLUGIN_NAME}" "${ADMINBIN_DIR}/${PLUGIN_NAME}.conf" 2>/dev/null || true
 
 # --- AppConfig registro ------------------------------------------------------
 echo "  - Removendo registros antigos de AppConfig e Plugin (limpeza)..."

@@ -97,15 +97,15 @@ sub api_run_action {
         return;
     }
 
-    my $result = eval {
+    eval {
         if ( $act eq 'kill_procs' ) { do_kill_procs($target); }
         else                        { do_fix_perms($target); }
         1;
-    };
-    if ( my $err = $@ ) {
+    } or do {
+        my $err = $@ || 'erro desconhecido';
         $err =~ s/\s+$//;
         json_out( { success => \0, message => "Falha na execução: $err" } );
-    }
+    };
 }
 
 # Lê /var/cpanel/users/* — cada arquivo representa um usuário cPanel.
