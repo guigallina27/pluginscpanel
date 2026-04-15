@@ -76,26 +76,26 @@ echo "  - Removendo registros antigos de AppConfig e Plugin (limpeza)..."
 /usr/local/cpanel/bin/unregister_appconfig whm_usertools >/dev/null 2>&1 || true
 /usr/local/cpanel/scripts/uninstall_plugin "${SRC_DIR}/cpanel" --theme jupiter >/dev/null 2>&1 || true
 
-echo "  - Registrando AppConfig (WHM)"
-/usr/local/cpanel/bin/register_appconfig "${SRC_DIR}/whm/usertools.conf"
-
-echo "  - Registrando AppConfig (cPanel)"
-/usr/local/cpanel/bin/register_appconfig "${SRC_DIR}/cpanel/usertools.conf"
-
 # --- Feature Manager ---------------------------------------------------------
-# Registra a feature no Feature Manager do WHM (aparece na UI) e habilita
-# por padrão nas feature lists existentes (usadas pelos planos).
+# IMPORTANTE: a feature precisa existir em addonfeatures ANTES do
+# register_appconfig do cPanel, caso contrario o cpanel valida a feature
+# declarada no .conf (feature=usertools), nao encontra e ignora o registro
+# da feature - resultado: nunca aparece no Feature Manager nem ao usuario.
 ADDON_FEATURES_DIR="/usr/local/cpanel/whostmgr/addonfeatures"
 if [[ -d "${ADDON_FEATURES_DIR}" ]]; then
-    # O arquivo contém o displayname mostrado no Feature Manager
     echo "Ferramentas do Usuário" > "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
     chown root:root "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
     chmod 0644 "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
     echo "  - Feature '${PLUGIN_NAME}' registrada no Feature Manager"
 fi
 
-# Habilita a feature em todas as feature lists existentes — assim os planos
-# que usam essas lists passam a enxergar o ícone no cPanel imediatamente.
+echo "  - Registrando AppConfig (WHM)"
+/usr/local/cpanel/bin/register_appconfig "${SRC_DIR}/whm/usertools.conf"
+
+echo "  - Registrando AppConfig (cPanel)"
+/usr/local/cpanel/bin/register_appconfig "${SRC_DIR}/cpanel/usertools.conf"
+
+# Habilita a feature em todas as feature lists em disco.
 FEATURES_DIR="/var/cpanel/features"
 if [[ -d "${FEATURES_DIR}" ]]; then
     shopt -s nullglob
@@ -109,8 +109,22 @@ if [[ -d "${FEATURES_DIR}" ]]; then
         fi
     done
     shopt -u nullglob
-    echo "  - Feature 'usertools' confirmada ativa em todas as listas de planos"
+    echo "  - Feature 'usertools' confirmada ativa em todas as listas de planos em disco"
 fi
+
+# A feature list 'default' e compilada e nao fica em /var/cpanel/features/,
+# entao injetamos via whmapi1 para garantir que o plano padrao (usado pela
+# maioria dos usuarios de teste) enxergue o icone.
+if command -v whmapi1 >/dev/null 2>&1; then
+    whmapi1 update_featurelist featurelist=default "features.${PLUGIN_NAME}=1" >/dev/null 2>&1 || true
+    echo "  - Feature '${PLUGIN_NAME}' habilitada na feature list 'default' via whmapi1"
+fi
+
+# Limpa caches dynamicui por usuario para forcar recomputacao do chrome do cPanel.
+for userhome in /home/*/; do
+    [[ -d "${userhome}.cpanel/caches" ]] || continue
+    rm -f "${userhome}.cpanel/caches/dynamicui"* 2>/dev/null || true
+done
 
 # --- Limpeza de cache + reload -----------------------------------------------
 echo "  - Limpando caches e recarregando cpsrvd"
