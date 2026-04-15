@@ -39,10 +39,9 @@ Logue como `root` no servidor cPanel/WHM e rode:
 
 ```bash
 cd /root
-rm -rf pluginscpanel pluginscpanel-main
-wget -qO- https://github.com/guigallina27/pluginscpanel/archive/refs/heads/main.tar.gz | tar -xz
-mv pluginscpanel-main pluginscpanel
-bash /root/pluginscpanel/usertools/install.sh
+git clone https://github.com/guigallina27/pluginscpanel.git
+cd pluginscpanel/usertools
+bash install.sh
 ```
 
 Isso é tudo — o `install.sh` cuida do processo completo.
