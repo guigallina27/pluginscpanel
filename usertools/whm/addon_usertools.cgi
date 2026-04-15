@@ -201,9 +201,15 @@ sub do_kill_procs {
     chomp $before;
     $before = '0' unless defined $before && length $before;
 
+    # Kill imediato - o addon_usertools.cgi roda como root (contexto
+    # whostmgr), entao matar processos do usuario alvo nao encerra
+    # a propria requisicao. Diferente do lado cPanel onde o pkill
+    # e diferido porque o CGI roda sob o mesmo UID do alvo.
     system( '/usr/bin/pkill', '-9', '-ceiu', $user );
 
-    sleep 1;
+    # Pequeno delay para o kernel atualizar a tabela de processos antes
+    # do pgrep pos-kill - sem isso o before e after mostram o mesmo valor.
+    select( undef, undef, undef, 0.5 );
 
     my $after = qx{/usr/bin/pgrep -c -u \Q$user\E 2>/dev/null};
     chomp $after;
@@ -249,79 +255,53 @@ sub do_fix_perms {
         return;
     }
 
-    # Pegamos ids de permissões base
     my $user_uid = $pw[2];
-    my $nobody_gid;
-    my @nb_pw = getgrnam('nobody');
-    $nobody_gid = $nb_pw[2] if @nb_pw;
+    my $user_gid = $pw[3];
 
-    # Trava e ajusta home inicial
-    system('/bin/chmod', '711', $home);
-    system('/bin/chown', "$user:$user", $home);
+    # 1. Owner recursivo em TODO o home.
+    system('/bin/chown', '-R', "$user:$user", $home);
 
-    my @docroots;
+    # 2. Permissoes base em todo o home: dirs 755, arquivos 644.
+    system('/usr/bin/find', $home, '-type', 'd', '-exec', '/bin/chmod', '755', '{}', '+');
+    system('/usr/bin/find', $home, '-type', 'f', '-exec', '/bin/chmod', '644', '{}', '+');
+
+    # 3. Scripts mantem bit de execucao.
+    system('/usr/bin/find', $home, '-type', 'f',
+        '(', '-name', '*.cgi', '-o', '-name', '*.pl', '-o', '-name', '*.sh', ')',
+        '-exec', '/bin/chmod', '755', '{}', '+');
+
+    # 4. Casos especiais (apos o find geral):
+    chmod 0711, $home;
+
     my $public_html = "$home/public_html";
-    push @docroots, $public_html if -d $public_html;
+    if (-d $public_html) {
+        my @nb = getgrnam('nobody');
+        my $nobody_gid = @nb ? $nb[2] : $user_gid;
+        chown $user_uid, $nobody_gid, $public_html;
+        chmod 0750, $public_html;
+    }
 
-    # Varre userdata atras de docroots externos ou isolados (Addons)
-    my $userdata_dir = "/var/cpanel/userdata/$user";
-    if (-d $userdata_dir) {
-        opendir(my $dh, $userdata_dir);
-        if ($dh) {
-            my @files;
-            while (my $entry = readdir $dh) {
-                next if $entry =~ /^\./ || $entry =~ /\.cache$/ || $entry =~ /_SSL$/ || $entry eq 'main';
-                push @files, "$userdata_dir/$entry" if -f "$userdata_dir/$entry";
-            }
-            closedir $dh;
-            
-            my %seen;
-            $seen{$public_html} = 1;
-            for my $file (@files) {
-                open(my $fh, '<', $file) or next;
-                while (my $line = <$fh>) {
-                    next unless $line =~ /^\s*documentroot\s*:\s*(.+?)\s*$/;
-                    my $dr = $1;
-                    $dr =~ s/^["']|["']$//g;
-                    next unless $dr =~ m{^\Q$home\E/}; # Impede traversal
-                    next if $seen{$dr}++;
-                    push @docroots, $dr if -d $dr;
-                }
-                close $fh;
-            }
+    my $ssh_dir = "$home/.ssh";
+    if (-d $ssh_dir) {
+        chmod 0700, $ssh_dir;
+        system('/usr/bin/find', $ssh_dir, '-type', 'f', '-exec', '/bin/chmod', '600', '{}', '+');
+    }
+
+    my $etc_dir = "$home/etc";
+    if (-d $etc_dir) {
+        my @mg = getgrnam('mail');
+        if (@mg) {
+            system('/bin/chown', '-R', "$user:mail", $etc_dir);
+            chmod 0750, $etc_dir;
         }
     }
 
-    my $count = 0;
-    for my $dr (@docroots) {
-        system('/bin/chown', '-R', "$user:$user", $dr);
-        system('/usr/bin/find', $dr, '-type', 'd', '-exec', '/bin/chmod', '755', '{}', '+');
-        system('/usr/bin/find', $dr, '-type', 'f', '-exec', '/bin/chmod', '644', '{}', '+');
-        system('/usr/bin/find', $dr, '-type', 'f', '(', '-name', '*.cgi', '-o', '-name', '*.pl', ')', '-exec', '/bin/chmod', '755', '{}', '+');
-        
-        if ($dr eq $public_html) {
-            system('/bin/chmod', '750', $public_html);
-            if (defined $nobody_gid) {
-                chown($user_uid, $nobody_gid, $public_html);
-            }
-        } else {
-            system('/bin/chmod', '755', $dr);
-        }
-        $count++;
-    }
+    my $mail_dir = "$home/mail";
+    chmod 0751, $mail_dir if -d $mail_dir;
 
-    if ( $count == 0 ) {
-        json_out({
-            success => \0,
-            message => "A conta \"$user\" não possui nenhum site ativo. Para reparar permissões é preciso ter ao menos um domínio com pasta pública configurada (public_html ou domínio adicional).",
-        });
-        return;
-    }
-
-    my $plural = $count == 1 ? 'site' : 'sites';
     json_out({
         success => \1,
-        message => "Permissões normalizadas em $count $plural da conta \"$user\". Pastas em 755, arquivos em 644, scripts .cgi/.pl em 755 e proprietário restabelecido para o próprio usuário. Se o problema que motivou esta ação persistir, aguarde alguns minutos para o servidor web reprocessar os arquivos.",
+        message => "Permissões normalizadas em toda a conta \"$user\". Diretórios em 755, arquivos em 644, scripts .cgi/.pl/.sh em 755. Permissões especiais aplicadas: home em 711, public_html em 750 (user:nobody), .ssh em 700 com chaves em 600, mail em 751, etc em 750 (user:mail). Dono restabelecido para o próprio usuário em todos os arquivos.",
     });
 }
 sub render_ui {

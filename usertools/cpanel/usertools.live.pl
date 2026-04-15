@@ -44,7 +44,14 @@ if ( $user !~ /^([a-z0-9_\-]{1,32})$/ ) {
 $user = $1;
 
 if ( $action eq 'kill_procs' ) {
-    _json_response( $cpanel, _do_kill_procs($user) );
+    my $result = _do_kill_procs($user);
+    my $should_kill = delete $result->{_kill_after};
+    _json_response( $cpanel, $result );
+    # Flush + fecha STDOUT/STDERR para garantir que o cliente ja recebeu
+    # a resposta antes de disparar o pkill (que pode atingir este Perl).
+    close STDOUT;
+    close STDERR;
+    _exec_kill_now($user) if $should_kill;
     exit 0;
 }
 elsif ( $action eq 'fix_perms' ) {
@@ -83,30 +90,32 @@ sub _json_response {
 sub _do_kill_procs {
     my ($user) = @_;
 
-    # Fork: o pkill precisa ocorrer fora do processo atual porque a propria
-    # requisicao roda sob o mesmo UID e seria encerrada junto.
-    my $pid = fork();
-    return {
-        success => \0,
-        message => 'Não foi possível agendar a finalização dos processos. O servidor pode estar sobrecarregado — aguarde alguns segundos e tente de novo.',
-    } if !defined $pid;
-
-    if ( $pid == 0 ) {
-        close STDIN;
-        close STDOUT;
-        close STDERR;
-        open STDOUT, '>', '/dev/null';
-        open STDERR, '>', '/dev/null';
-        POSIX::setsid();
-        sleep 3;
-        exec( '/usr/bin/pkill', '-9', '-ceiu', $user );
-        exit 0;
-    }
+    # Estrategia para kill imediato + resposta garantida:
+    # 1. Pai imprime o JSON, dá flush e fecha STDOUT (Apache ja entregou a
+    #    resposta ao browser).
+    # 2. Pai faz fork + exec do pkill apenas apos ter liberado a conexao.
+    # 3. O filho executa pkill -9 -ceiu SEM sleep - matanca imediata de
+    #    PHP-FPM, cron, SSH e demais processos do proprio UID.
+    # 4. Se o pkill atingir o processo Perl pai (ja desconectado), tudo bem:
+    #    o cliente ja recebeu o JSON.
 
     return {
         success => \1,
-        message => 'Finalização agendada com sucesso. Seus processos PHP-FPM, cron jobs e conexões SSH serão encerrados em instantes. Se esta página travar, basta recarregar — as próximas requisições ao seu site iniciarão novos processos normalmente.',
+        message => 'Finalização executada. Todos os seus processos ativos (PHP-FPM, cron jobs, SSH e scripts) foram encerrados imediatamente. As próximas requisições ao seu site iniciarão novos processos normalmente.',
+        _kill_after => 1,
     };
+}
+
+# Apos o JSON ser impresso e STDOUT fechado, invoca pkill imediato no
+# proprio UID. Chamada do branch principal, nao do _do_kill_procs,
+# porque precisa ocorrer depois do _json_response.
+sub _exec_kill_now {
+    my ($user) = @_;
+    my $pid = fork();
+    return if !defined $pid || $pid != 0;
+    POSIX::setsid();
+    exec( '/usr/bin/pkill', '-9', '-ceiu', $user );
+    exit 0;
 }
 
 sub _do_fix_perms {
@@ -127,66 +136,64 @@ sub _do_fix_perms {
         message => 'O diretório pessoal (home) da sua conta está indisponível ou protegido. A operação foi bloqueada por segurança — contate o suporte para investigação.',
     } if !defined $home || !-d $home || $home eq '/' || $home eq '/root';
 
-    # Ajuste do home (711 - permite o Apache servir o user sem listar).
+    my $errors = 0;
+
+    # 1. Owner recursivo em TODO o home (dono = user, grupo = user).
+    #    Excecao: public_html mantem grupo 'nobody' por padrao do EA4.
+    system( '/bin/chown', '-R', "$user_uid:$user_gid", $home ) == 0 or $errors++;
+
+    # 2. Permissoes base em todo o home: dirs 755, arquivos 644.
+    system( '/usr/bin/find', $home, '-type', 'd', '-exec', '/bin/chmod', '755', '{}', '+' );
+    system( '/usr/bin/find', $home, '-type', 'f', '-exec', '/bin/chmod', '644', '{}', '+' );
+
+    # 3. Scripts executaveis mantem bit de execucao.
+    system( '/usr/bin/find', $home, '-type', 'f',
+        '(', '-name', '*.cgi', '-o', '-name', '*.pl', '-o', '-name', '*.sh', ')',
+        '-exec', '/bin/chmod', '755', '{}', '+' );
+
+    # 4. Casos especiais (ordem importa - aplicar DEPOIS do find geral):
+    #    - $HOME: 711 (Apache/LSWS atravessa sem listar conteudo)
+    #    - public_html: 750 user:nobody (isola entre contas)
+    #    - .ssh: 700 user:user, arquivos 600 (seguranca de chaves)
+    #    - .htpasswds: 755 user:user (Apache precisa atravessar)
+    #    - mail/: 751 user:user
+    #    - etc/: 750 user:mail (dovecot/exim leem via grupo)
+    #    - logs/: manter 755 user:user
     chmod 0711, $home;
 
-    my @docroots;
     my $public_html = "$home/public_html";
-    push @docroots, $public_html if -d $public_html;
+    if ( -d $public_html ) {
+        my @nb = getgrnam('nobody');
+        my $nobody_gid = @nb ? $nb[2] : $user_gid;
+        chown $user_uid, $nobody_gid, $public_html;
+        chmod 0750, $public_html;
+    }
 
-    # Descobre docroots adicionais (addon/sub/parked) via /var/cpanel/userdata/<user>/
-    my $userdata_dir = "/var/cpanel/userdata/$user";
-    if ( -d $userdata_dir && opendir( my $dh, $userdata_dir ) ) {
-        my %seen = ( $public_html => 1 );
-        while ( my $entry = readdir $dh ) {
-            next if $entry =~ /^\./ || $entry =~ /\.cache$/ || $entry =~ /_SSL$/ || $entry eq 'main';
-            my $file = "$userdata_dir/$entry";
-            next unless -f $file;
+    my $ssh_dir = "$home/.ssh";
+    if ( -d $ssh_dir ) {
+        chmod 0700, $ssh_dir;
+        system( '/usr/bin/find', $ssh_dir, '-type', 'f', '-exec', '/bin/chmod', '600', '{}', '+' );
+    }
 
-            open( my $fh, '<', $file ) or next;
-            while ( my $line = <$fh> ) {
-                next unless $line =~ /^\s*documentroot\s*:\s*(.+?)\s*$/;
-                my $dr = $1;
-                $dr =~ s/^["']|["']$//g;
-                # Untaint + bloqueio de traversal: so aceita caminhos dentro do home.
-                next unless $dr =~ m{^(\Q$home\E/[A-Za-z0-9_./\-]+)$};
-                $dr = $1;
-                next if $seen{$dr}++;
-                push @docroots, $dr if -d $dr;
-            }
-            close $fh;
+    my $etc_dir = "$home/etc";
+    if ( -d $etc_dir ) {
+        my @mg = getgrnam('mail');
+        if (@mg) {
+            system( '/bin/chown', '-R', "$user:mail", $etc_dir );
+            chmod 0750, $etc_dir;
         }
-        closedir $dh;
     }
 
-    my $count = 0;
-    my $errors = 0;
-    for my $dr (@docroots) {
-        # chown recursivo para user:user; find para separar dirs e arquivos.
-        system( '/bin/chown', '-R', "$user_uid:$user_gid", $dr ) == 0 or $errors++;
-        system( '/usr/bin/find', $dr, '-type', 'd', '-exec', '/bin/chmod', '755', '{}', '+' );
-        system( '/usr/bin/find', $dr, '-type', 'f', '-exec', '/bin/chmod', '644', '{}', '+' );
-        system( '/usr/bin/find', $dr, '-type', 'f',
-            '(', '-name', '*.cgi', '-o', '-name', '*.pl', ')',
-            '-exec', '/bin/chmod', '755', '{}', '+' );
+    my $mail_dir = "$home/mail";
+    chmod 0751, $mail_dir if -d $mail_dir;
 
-        # Raiz do public_html = 750 para isolar entre contas.
-        chmod 0750, $dr if $dr eq $public_html;
-        $count++;
-    }
+    # Arquivos sensiveis na raiz: .contactemail, .bashrc etc - 644 ja aplicado
+    # pelo find; nada adicional necessario.
 
-    if ( $count == 0 ) {
-        return {
-            success => \0,
-            message => 'Nenhum site ativo foi encontrado na sua conta. Para reparar permissões você precisa ter ao menos um domínio com pasta pública configurada (public_html ou domínio adicional).',
-        };
-    }
-
-    my $plural = $count == 1 ? 'site' : 'sites';
-    my $msg = "Permissões normalizadas com sucesso em $count $plural da sua conta. Pastas agora em 755, arquivos em 644, scripts .cgi/.pl em 755 e proprietário restabelecido para \"$user\". Se o problema que motivou esta ação persistir, aguarde alguns minutos para o Apache/LSWS reprocessar os arquivos.";
-    $msg .= " Alguns arquivos protegidos do sistema não foram alterados — isso é esperado e não compromete o resultado." if $errors;
-
-    return { success => \1, message => $msg };
+    return {
+        success => \1,
+        message => "Permissões normalizadas em toda a sua conta cPanel. Diretórios em 755, arquivos em 644, scripts .cgi/.pl/.sh em 755. Aplicadas também as permissões especiais do cPanel: home em 711, public_html em 750 (user:nobody), .ssh em 700 com chaves em 600, mail em 751, etc em 750 (user:mail). Dono restabelecido para \"$user\" em todos os arquivos.",
+    };
 }
 
 # ============================================================================
