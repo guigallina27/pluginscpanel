@@ -12,7 +12,7 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
-.ut-scope {
+.ut {
   --ut-bg:         #FFFFFF;
   --ut-bg-alt:     #F8FAFC;
   --ut-bg-hover:   #F1F5F9;
@@ -22,204 +22,198 @@
   --ut-border:     #E2E8F0;
   --ut-border-str: #CBD5E1;
   --ut-accent:     #2563EB;
-  --ut-accent-dim: #DBEAFE;
+  --ut-accent-dim: #EFF6FF;
   --ut-accent-dk:  #1D4ED8;
   --ut-danger:     #DC2626;
-  --ut-danger-dim: #FEE2E2;
+  --ut-danger-dim: #FEF2F2;
   --ut-danger-dk:  #B91C1C;
   --ut-warn:       #D97706;
-  --ut-warn-dim:   #FEF3C7;
+  --ut-warn-dim:   #FFFBEB;
   --ut-success:    #16A34A;
-  --ut-success-dim:#DCFCE7;
-  --ut-shadow:     0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
-  --ut-shadow-lg:  0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 10px 15px -3px rgba(15, 23, 42, 0.1);
+  --ut-success-dim:#F0FDF4;
 
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   color: var(--ut-text);
   font-size: 14px;
-  line-height: 1.5;
-  padding: 24px;
+  line-height: 1.55;
+  padding: 32px 40px 48px;
   width: 100%;
 }
-.ut-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 20px;
-}
-@media (min-width: 1100px) {
-  .ut-grid { grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); }
+@media (max-width: 720px) {
+  .ut { padding: 20px 16px 32px; }
 }
 @media (prefers-color-scheme: dark) {
-  .ut-scope {
-    --ut-bg:         #1E293B;
-    --ut-bg-alt:     #0F172A;
+  .ut {
+    --ut-bg:         #0F172A;
+    --ut-bg-alt:     #1E293B;
     --ut-bg-hover:   #334155;
     --ut-text:       #F1F5F9;
     --ut-text-dim:   #CBD5E1;
     --ut-text-mute:  #64748B;
-    --ut-border:     #334155;
-    --ut-border-str: #475569;
-    --ut-accent-dim: rgba(37, 99, 235, 0.2);
-    --ut-danger-dim: rgba(220, 38, 38, 0.2);
-    --ut-warn-dim:   rgba(217, 119, 6, 0.2);
-    --ut-success-dim:rgba(22, 163, 74, 0.2);
-    --ut-shadow:     0 1px 2px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
-    --ut-shadow-lg:  0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    --ut-border:     #1E293B;
+    --ut-border-str: #334155;
+    --ut-accent-dim: rgba(37, 99, 235, 0.15);
+    --ut-danger-dim: rgba(220, 38, 38, 0.12);
+    --ut-warn-dim:   rgba(217, 119, 6, 0.12);
+    --ut-success-dim:rgba(22, 163, 74, 0.12);
   }
 }
-.ut-scope, .ut-scope * { box-sizing: border-box; }
+.ut, .ut * { box-sizing: border-box; }
 
-.ut-card {
-  background: var(--ut-bg);
-  border: 1px solid var(--ut-border);
-  border-radius: 14px;
-  box-shadow: var(--ut-shadow);
-  overflow: hidden;
-}
-.ut-card-head {
+/* Header da página */
+.ut-page-header {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 20px 24px;
+  gap: 16px;
+  padding-bottom: 20px;
+  margin-bottom: 28px;
   border-bottom: 1px solid var(--ut-border);
 }
-.ut-card-head-icon {
-  width: 44px; height: 44px;
-  border-radius: 10px;
+.ut-page-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
   background: var(--ut-accent-dim);
   color: var(--ut-accent);
-  font-size: 22px;
+  font-size: 24px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.ut-card-head-text { flex: 1; min-width: 0; }
-.ut-card-title {
+.ut-page-text { flex: 1; min-width: 0; }
+.ut-page-title {
   margin: 0;
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ut-text);
 }
-.ut-card-subtitle {
-  margin: 2px 0 0;
+.ut-page-subtitle {
+  margin: 4px 0 0;
+  font-size: 14px;
   color: var(--ut-text-dim);
-  font-size: 13px;
 }
-.ut-badge {
+.ut-role-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  gap: 6px;
+  padding: 6px 12px;
   background: var(--ut-accent-dim);
   color: var(--ut-accent);
-  border-radius: 999px;
-  font-size: 11px;
+  border-radius: 8px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   flex-shrink: 0;
 }
 
-.ut-card-body { padding: 24px; }
-
+/* Alert */
 .ut-alert {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 14px 18px;
   background: var(--ut-warn-dim);
+  border: 1px solid color-mix(in srgb, var(--ut-warn) 25%, transparent);
   border-radius: 10px;
   font-size: 13px;
   color: var(--ut-text);
-  margin-bottom: 20px;
+  margin-bottom: 32px;
 }
 .ut-alert i {
   color: var(--ut-warn);
-  font-size: 16px;
+  font-size: 18px;
   flex-shrink: 0;
   margin-top: 1px;
 }
-.ut-alert strong { color: var(--ut-text); font-weight: 600; }
+.ut-alert strong { font-weight: 600; }
 
-.ut-field { margin-bottom: 20px; }
-.ut-field-label {
-  display: block;
-  margin-bottom: 6px;
+/* Seções */
+.ut-section { margin-bottom: 32px; }
+.ut-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 16px;
+}
+.ut-section-title {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--ut-text-dim);
 }
-
-/* Combobox */
-.ut-combo { position: relative; }
-.ut-combo-input {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.ut-combo-input i.bi-search {
-  position: absolute;
-  left: 12px;
+.ut-section-hint {
+  font-size: 13px;
   color: var(--ut-text-mute);
-  font-size: 15px;
+}
+
+/* Combobox de busca */
+.ut-combo { position: relative; }
+.ut-combo-input { position: relative; display: flex; align-items: center; }
+.ut-combo-input > i.bi-search {
+  position: absolute;
+  left: 14px;
+  color: var(--ut-text-mute);
+  font-size: 16px;
   pointer-events: none;
 }
 .ut-input {
   width: 100%;
-  padding: 10px 36px 10px 36px;
-  background: var(--ut-bg-alt);
-  border: 1px solid var(--ut-border);
+  padding: 12px 40px 12px 42px;
+  background: var(--ut-bg);
+  border: 1px solid var(--ut-border-str);
   border-radius: 10px;
   color: var(--ut-text);
-  font-size: 14px;
+  font-size: 15px;
   font-family: inherit;
-  transition: all 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .ut-input::placeholder { color: var(--ut-text-mute); }
 .ut-input:focus {
   outline: none;
   border-color: var(--ut-accent);
-  background: var(--ut-bg);
-  box-shadow: 0 0 0 3px var(--ut-accent-dim);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ut-accent) 18%, transparent);
 }
+.ut-input:disabled { background: var(--ut-bg-alt); cursor: not-allowed; }
 .ut-combo-clear {
-  position: absolute;
-  right: 8px;
-  width: 24px; height: 24px;
+  position: absolute; right: 10px;
+  width: 26px; height: 26px;
   border: none;
   background: transparent;
   color: var(--ut-text-mute);
   cursor: pointer;
   border-radius: 6px;
   display: none;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
+  align-items: center; justify-content: center;
+  font-size: 13px;
 }
 .ut-combo-clear:hover { background: var(--ut-bg-hover); color: var(--ut-text); }
 .ut-combo.has-value .ut-combo-clear { display: flex; }
 .ut-list {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   left: 0; right: 0;
   background: var(--ut-bg);
-  border: 1px solid var(--ut-border);
+  border: 1px solid var(--ut-border-str);
   border-radius: 10px;
-  box-shadow: var(--ut-shadow-lg);
-  max-height: 280px;
+  box-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.2), 0 4px 10px -2px rgba(15, 23, 42, 0.08);
+  max-height: 320px;
   overflow-y: auto;
   z-index: 20;
   list-style: none;
   margin: 0;
-  padding: 4px;
+  padding: 6px;
 }
 .ut-list[hidden] { display: none; }
 .ut-list-item {
-  padding: 9px 12px;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   transition: background 0.1s;
 }
 .ut-list-item:hover,
@@ -227,46 +221,53 @@
 .ut-list-item-user {
   font-weight: 600;
   color: var(--ut-text);
-  font-size: 13px;
+  font-size: 14px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .ut-list-item-domain {
   color: var(--ut-text-mute);
-  font-size: 12px;
+  font-size: 13px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: right;
 }
 .ut-list-empty {
-  padding: 20px;
+  padding: 24px;
   text-align: center;
   color: var(--ut-text-mute);
-  font-size: 13px;
+  font-size: 14px;
 }
 
-/* Selected pill */
+/* Usuário selecionado */
 .ut-selected {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: 14px;
+  padding: 14px 18px;
   background: var(--ut-accent-dim);
-  border: 1px solid transparent;
+  border: 1px solid color-mix(in srgb, var(--ut-accent) 20%, transparent);
   border-radius: 10px;
-  color: var(--ut-text);
 }
 .ut-selected[hidden] { display: none; }
-.ut-selected i.bi-check-circle-fill {
+.ut-selected > i.bi-check-circle-fill {
   color: var(--ut-accent);
-  font-size: 18px;
+  font-size: 20px;
   flex-shrink: 0;
 }
 .ut-selected-info { flex: 1; min-width: 0; }
-.ut-selected-user { font-weight: 600; }
-.ut-selected-domain { color: var(--ut-text-dim); font-size: 12px; }
+.ut-selected-user {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ut-text);
+}
+.ut-selected-domain {
+  color: var(--ut-text-dim);
+  font-size: 13px;
+  margin-top: 2px;
+}
 .ut-btn-link {
   background: none;
   border: none;
@@ -274,44 +275,36 @@
   font-weight: 600;
   cursor: pointer;
   font-size: 13px;
-  padding: 4px 8px;
+  padding: 6px 10px;
   border-radius: 6px;
+  font-family: inherit;
 }
-.ut-btn-link:hover { background: rgba(37, 99, 235, 0.1); }
+.ut-btn-link:hover { background: color-mix(in srgb, var(--ut-accent) 10%, transparent); }
 
-/* Action buttons */
+/* Botões de ação */
 .ut-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
-@media (max-width: 600px) {
-  .ut-actions { grid-template-columns: 1fr; }
-}
+.ut-actions .ut-btn { flex: 1 1 240px; }
 .ut-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 11px 18px;
+  gap: 10px;
+  padding: 13px 22px;
   border: 1px solid transparent;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   transition: all 0.15s;
 }
-.ut-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.ut-btn i { font-size: 16px; }
-
-.ut-btn-primary {
-  background: var(--ut-accent);
-  color: #fff;
-}
+.ut-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.ut-btn i { font-size: 17px; }
+.ut-btn-primary { background: var(--ut-accent); color: #fff; }
 .ut-btn-primary:hover:not(:disabled) { background: var(--ut-accent-dk); }
 .ut-btn-danger {
   background: var(--ut-bg);
@@ -324,194 +317,118 @@
   border-color: var(--ut-danger);
 }
 
-/* Result */
+/* Resultado */
 .ut-result {
-  margin-top: 20px;
-  padding: 12px 14px;
+  margin-top: 24px;
+  padding: 14px 18px;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 14px;
   display: none;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
   word-break: break-word;
+  line-height: 1.5;
 }
 .ut-result.show { display: flex; }
-.ut-result i { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
-.ut-result.success { background: var(--ut-success-dim); color: var(--ut-text); }
+.ut-result i { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.ut-result.success { background: var(--ut-success-dim); color: var(--ut-text); border: 1px solid color-mix(in srgb, var(--ut-success) 30%, transparent); }
 .ut-result.success i { color: var(--ut-success); }
-.ut-result.error { background: var(--ut-danger-dim); color: var(--ut-text); }
+.ut-result.error { background: var(--ut-danger-dim); color: var(--ut-text); border: 1px solid color-mix(in srgb, var(--ut-danger) 30%, transparent); }
 .ut-result.error i { color: var(--ut-danger); }
 
 .ut-spinner {
   display: inline-block;
-  width: 14px; height: 14px;
+  width: 15px; height: 15px;
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: 50%;
   animation: ut-spin 0.6s linear infinite;
 }
 @keyframes ut-spin { to { transform: rotate(360deg); } }
-
-/* Painel lateral com estatísticas e dicas */
-.ut-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.ut-stat-card {
-  background: var(--ut-bg);
-  border: 1px solid var(--ut-border);
-  border-radius: 14px;
-  padding: 20px;
-  box-shadow: var(--ut-shadow);
-}
-.ut-stat-card h3 {
-  margin: 0 0 14px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ut-text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.ut-stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--ut-border);
-  font-size: 13px;
-}
-.ut-stat-row:last-child { border-bottom: none; }
-.ut-stat-label { color: var(--ut-text-dim); }
-.ut-stat-value { font-weight: 600; color: var(--ut-text); }
-
-.ut-help {
-  background: var(--ut-bg-alt);
-  border: 1px solid var(--ut-border);
-  border-radius: 14px;
-  padding: 18px;
-  font-size: 13px;
-  color: var(--ut-text-dim);
-}
-.ut-help h3 {
-  margin: 0 0 10px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ut-text);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.ut-help ul { margin: 0; padding-left: 18px; }
-.ut-help li { margin-bottom: 6px; }
-.ut-help li strong { color: var(--ut-text); }
 </style>
 
-<div class="ut-scope">
-  <div class="ut-grid">
-  <div class="ut-card">
-    <header class="ut-card-head">
-      <div class="ut-card-head-icon"><i class="bi bi-tools" aria-hidden="true"></i></div>
-      <div class="ut-card-head-text">
-        <h2 class="ut-card-title">Ferramentas do Usuário</h2>
-        <p class="ut-card-subtitle">Ações de manutenção em contas cPanel</p>
-      </div>
-      <span class="ut-badge">[% data.role_label | html %]</span>
-    </header>
+<div class="ut">
+  <header class="ut-page-header">
+    <div class="ut-page-icon"><i class="bi bi-tools" aria-hidden="true"></i></div>
+    <div class="ut-page-text">
+      <h1 class="ut-page-title">Ferramentas do Usuário</h1>
+      <p class="ut-page-subtitle">Ações de manutenção em contas cPanel deste servidor.</p>
+    </div>
+    <span class="ut-role-badge">
+      <i class="bi bi-shield-lock-fill" aria-hidden="true"></i>
+      [% data.role_label | html %]
+    </span>
+  </header>
 
-    <div class="ut-card-body">
-      <div class="ut-alert" role="note">
-        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
-        <div>
-          <strong>Atenção:</strong> finalizar processos interrompe PHP-FPM, cron, SSH
-          e aplicações do usuário. Corrigir permissões reescreve owner/grupo e modos
-          do diretório home.
-        </div>
-      </div>
-
-      <div class="ut-field">
-        <label class="ut-field-label" for="ut-search">Conta cPanel</label>
-
-        <div id="ut-combo" class="ut-combo">
-          <div class="ut-combo-input">
-            <i class="bi bi-search" aria-hidden="true"></i>
-            <input
-              id="ut-search"
-              class="ut-input"
-              type="text"
-              placeholder="Carregando contas..."
-              autocomplete="off"
-              spellcheck="false"
-              disabled
-              aria-label="Buscar conta cPanel"
-              aria-autocomplete="list"
-              aria-controls="ut-list"
-            >
-            <button id="ut-clear" class="ut-combo-clear" type="button" aria-label="Limpar busca" tabindex="-1">
-              <i class="bi bi-x-lg" aria-hidden="true"></i>
-            </button>
-          </div>
-          <ul id="ut-list" class="ut-list" role="listbox" hidden></ul>
-        </div>
-
-        <div id="ut-selected" class="ut-selected" style="margin-top:10px" hidden>
-          <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
-          <div class="ut-selected-info">
-            <div class="ut-selected-user" id="ut-selected-user"></div>
-            <div class="ut-selected-domain" id="ut-selected-domain"></div>
-          </div>
-          <button id="ut-change" type="button" class="ut-btn-link">Trocar</button>
-        </div>
-      </div>
-
-      <div class="ut-actions">
-        <button id="ut-btn-kill" type="button" class="ut-btn ut-btn-danger" disabled>
-          <i class="bi bi-x-octagon" aria-hidden="true"></i>
-          Finalizar Processos
-        </button>
-        <button id="ut-btn-fix" type="button" class="ut-btn ut-btn-primary" disabled>
-          <i class="bi bi-wrench-adjustable" aria-hidden="true"></i>
-          Corrigir Permissões &amp; Owner
-        </button>
-      </div>
-
-      <div id="ut-result" class="ut-result" role="status" aria-live="polite"></div>
+  <div class="ut-alert" role="note">
+    <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+    <div>
+      <strong>Atenção:</strong> finalizar processos interrompe PHP-FPM, cron, SSH
+      e aplicações do usuário. Corrigir permissões reescreve owner/grupo e modos
+      do diretório home — pode levar alguns segundos em contas grandes.
     </div>
   </div>
 
-  <aside class="ut-sidebar">
-    <div class="ut-stat-card">
-      <h3>Resumo</h3>
-      <div class="ut-stat-row">
-        <span class="ut-stat-label">Contas disponíveis</span>
-        <span class="ut-stat-value" id="ut-stat-count">—</span>
-      </div>
-      <div class="ut-stat-row">
-        <span class="ut-stat-label">Seu perfil</span>
-        <span class="ut-stat-value">[% data.role_label | html %]</span>
-      </div>
-      <div class="ut-stat-row">
-        <span class="ut-stat-label">Conta selecionada</span>
-        <span class="ut-stat-value" id="ut-stat-chosen">—</span>
-      </div>
+  <section class="ut-section">
+    <div class="ut-section-head">
+      <span class="ut-section-title">Conta cPanel</span>
+      <span class="ut-section-hint" id="ut-hint">Carregando contas...</span>
     </div>
 
-    <div class="ut-help">
-      <h3><i class="bi bi-info-circle" aria-hidden="true"></i> Quando usar</h3>
-      <ul>
-        <li><strong>Finalizar Processos:</strong> site travado, consumo alto de memória ou processos pendurados.</li>
-        <li><strong>Corrigir Permissões:</strong> erros 403 após restore, upload via SSH ou mudanças manuais de owner.</li>
-      </ul>
+    <div id="ut-combo" class="ut-combo">
+      <div class="ut-combo-input">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input
+          id="ut-search"
+          class="ut-input"
+          type="text"
+          placeholder="Buscar por usuário ou domínio..."
+          autocomplete="off"
+          spellcheck="false"
+          disabled
+          aria-label="Buscar conta cPanel"
+          aria-autocomplete="list"
+          aria-controls="ut-list"
+        >
+        <button id="ut-clear" class="ut-combo-clear" type="button" aria-label="Limpar busca" tabindex="-1">
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+      </div>
+      <ul id="ut-list" class="ut-list" role="listbox" hidden></ul>
     </div>
-  </aside>
-  </div>
+
+    <div id="ut-selected" class="ut-selected" style="margin-top:12px" hidden>
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      <div class="ut-selected-info">
+        <div class="ut-selected-user" id="ut-selected-user"></div>
+        <div class="ut-selected-domain" id="ut-selected-domain"></div>
+      </div>
+      <button id="ut-change" type="button" class="ut-btn-link">Trocar</button>
+    </div>
+  </section>
+
+  <section class="ut-section">
+    <div class="ut-section-head">
+      <span class="ut-section-title">Ações</span>
+    </div>
+    <div class="ut-actions">
+      <button id="ut-btn-kill" type="button" class="ut-btn ut-btn-danger" disabled>
+        <i class="bi bi-x-octagon" aria-hidden="true"></i>
+        Finalizar Processos
+      </button>
+      <button id="ut-btn-fix" type="button" class="ut-btn ut-btn-primary" disabled>
+        <i class="bi bi-wrench-adjustable" aria-hidden="true"></i>
+        Corrigir Permissões &amp; Owner
+      </button>
+    </div>
+    <div id="ut-result" class="ut-result" role="status" aria-live="polite"></div>
+  </section>
 </div>
 
 <script>
 (function() {
   'use strict';
 
-  // URL do browser inclui o cpsess token da sessão WHM.
   var URL_SELF = window.location.pathname;
 
   var combo      = document.getElementById('ut-combo');
@@ -525,15 +442,13 @@
   var btnKill    = document.getElementById('ut-btn-kill');
   var btnFix     = document.getElementById('ut-btn-fix');
   var result     = document.getElementById('ut-result');
-  var statCount  = document.getElementById('ut-stat-count');
-  var statChosen = document.getElementById('ut-stat-chosen');
+  var hint       = document.getElementById('ut-hint');
 
-  var accounts   = [];   // [{user, domain}, ...]
+  var accounts   = [];
   var filtered   = [];
   var focusedIdx = -1;
   var chosenUser = null;
 
-  // ---- result helpers ----
   function showResult(ok, msg) {
     result.className = 'ut-result show ' + (ok ? 'success' : 'error');
     result.innerHTML = '';
@@ -559,7 +474,6 @@
     });
   }
 
-  // ---- list render ----
   function renderList(items) {
     list.innerHTML = '';
     if (!items.length) {
@@ -573,8 +487,6 @@
       var li = document.createElement('li');
       li.className = 'ut-list-item';
       li.setAttribute('role', 'option');
-      li.setAttribute('data-user', u.user);
-      li.setAttribute('data-domain', u.domain || '');
       li.setAttribute('data-idx', i);
 
       var uEl = document.createElement('span');
@@ -586,13 +498,8 @@
 
       li.appendChild(uEl);
       li.appendChild(dEl);
-      li.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        pick(u);
-      });
-      li.addEventListener('mouseenter', function() {
-        setFocused(i);
-      });
+      li.addEventListener('mousedown', function(e) { e.preventDefault(); pick(u); });
+      li.addEventListener('mouseenter', function() { setFocused(i); });
       list.appendChild(li);
     });
   }
@@ -622,11 +529,7 @@
     }
   }
 
-  function openList() {
-    if (!accounts.length) return;
-    filter(input.value);
-    list.hidden = false;
-  }
+  function openList()  { if (!accounts.length) return; filter(input.value); list.hidden = false; }
   function closeList() { list.hidden = true; }
 
   function pick(u) {
@@ -637,7 +540,6 @@
     combo.style.display = 'none';
     btnKill.disabled = false;
     btnFix.disabled  = false;
-    if (statChosen) statChosen.textContent = u.user;
     clearResult();
     closeList();
   }
@@ -650,12 +552,10 @@
     btnFix.disabled  = true;
     input.value = '';
     combo.classList.remove('has-value');
-    if (statChosen) statChosen.textContent = '—';
     clearResult();
     setTimeout(function() { input.focus(); }, 0);
   }
 
-  // ---- event wiring ----
   input.addEventListener('focus', openList);
   input.addEventListener('click', openList);
   input.addEventListener('input', function() {
@@ -665,9 +565,7 @@
   });
   input.addEventListener('keydown', function(e) {
     if (list.hidden && (e.key === 'ArrowDown' || e.key === 'Enter')) {
-      openList();
-      e.preventDefault();
-      return;
+      openList(); e.preventDefault(); return;
     }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -693,7 +591,6 @@
     if (!combo.contains(e.target)) closeList();
   });
 
-  // ---- actions ----
   function runAction(act, btn, confirmMsg) {
     if (!chosenUser) return;
     if (!confirm(confirmMsg)) return;
@@ -732,10 +629,10 @@
     );
   });
 
-  // ---- initial load ----
   jsonFetch(URL_SELF + '?action=list_users').then(function(d) {
     if (!d.success) {
-      input.placeholder = 'Erro ao carregar contas';
+      input.placeholder = 'Erro ao carregar';
+      hint.textContent = 'Falha ao carregar';
       showResult(false, d.message || 'Falha ao listar usuários.');
       return;
     }
@@ -745,9 +642,10 @@
       ? 'Buscar por usuário ou domínio...'
       : 'Nenhuma conta disponível';
     filtered = accounts.slice();
-    if (statCount) statCount.textContent = accounts.length;
+    hint.textContent = accounts.length + ' conta' + (accounts.length === 1 ? '' : 's') + ' disponíve' + (accounts.length === 1 ? 'l' : 'is');
   }).catch(function(e) {
-    input.placeholder = 'Erro ao carregar contas';
+    input.placeholder = 'Erro ao carregar';
+    hint.textContent = 'Falha ao carregar';
     showResult(false, e.message || String(e));
   });
 })();

@@ -205,7 +205,8 @@ sub do_fix_perms {
         $msg .= " Docroots fora de public_html tratados: $extra." if $extra > 0;
     }
     elsif ( !defined $exit ) {
-        $msg = "Não foi possível localizar /scripts/fixhomedirperms.";
+        # $output aqui contém o diagnóstico detalhado
+        $msg = "fixhomedirperms não pôde ser executado: " . ( $output // '' );
     }
     else {
         $msg = "Falha em fixhomedirperms (exit=$exit).";
@@ -225,31 +226,15 @@ sub do_fix_perms {
 sub _run_fixhomedirperms {
     my ($user) = @_;
 
-    my @candidates = qw(
-        /scripts/fixhomedirperms
-        /usr/local/cpanel/scripts/fixhomedirperms
-    );
-
-    # Escolhe o primeiro que existir (usa -e em vez de -x porque o -x
-    # pode falhar sob cpsrvd dependendo do contexto, mas como o CGI
-    # roda como root é seguro tentar executar mesmo sem bit x do stat).
-    my $script;
-    my @diag;
-    for my $c (@candidates) {
-        if ( -e $c ) {
-            $script = $c;
-            last;
-        }
-        push @diag, "$c (stat: $!)";
-    }
-
+    my $script = _locate_fixhomedirperms();
     unless ($script) {
-        my $uid = getpwuid($<) // "uid=$<";
-        return (
-            "Script não encontrado. Contexto: euid=$>, uid=$<, usuário=$uid. "
-                . "Tentados: " . join( '; ', @diag ),
-            undef
-        );
+        my $uid_name = getpwuid($<) // "uid=$<";
+        my $diag = "euid=$>, uid=$< ($uid_name). ";
+        $diag .= "Conteúdo de /scripts: "
+            . ( _ls('/scripts') // 'inacessível' ) . ". ";
+        $diag .= "Conteúdo de /usr/local/cpanel/scripts: "
+            . ( _ls('/usr/local/cpanel/scripts') // 'inacessível' );
+        return ( $diag, undef );
     }
 
     # Abre pipe sem shell (lista de args). Evita problemas de PATH do CGI.
@@ -270,6 +255,33 @@ sub _run_fixhomedirperms {
     close $fh;
     my $exit = $? >> 8;
     return ( $output, $exit );
+}
+
+sub _locate_fixhomedirperms {
+    my @candidates = qw(
+        /scripts/fixhomedirperms
+        /usr/local/cpanel/scripts/fixhomedirperms
+        /usr/local/cpanel/bin/fixhomedirperms
+    );
+    for my $c (@candidates) {
+        return $c if -e $c || -l $c;
+    }
+    return;
+}
+
+# Lista até 40 entradas de um diretório em uma string compacta (para debug).
+sub _ls {
+    my ($dir) = @_;
+    return unless -d $dir;
+    opendir( my $dh, $dir ) or return "erro: $!";
+    my @entries;
+    while ( my $e = readdir $dh ) {
+        next if $e =~ /^\./;
+        push @entries, $e;
+        last if @entries >= 40;
+    }
+    closedir $dh;
+    return join( ',', @entries ) || '(vazio)';
 }
 
 # Ver explicação completa no bin/usertools — mesma rotina.
