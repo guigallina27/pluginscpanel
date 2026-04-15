@@ -297,7 +297,7 @@ sub do_fix_perms {
     my $public_ftp = "$home/public_ftp";
     if (-d $public_ftp) {
         chown $user_uid, $user_gid, $public_ftp;
-        chmod( $noanonftp ? 0750 : 0755 ), $public_ftp;
+        chmod +( $noanonftp ? 0750 : 0755 ), $public_ftp;
     }
 
     # .ssh: 700 user:user, arquivos 600 (chaves privadas SSH)

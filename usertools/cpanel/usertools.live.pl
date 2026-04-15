@@ -165,13 +165,13 @@ sub _do_fix_perms {
     # public_html e .htpasswds: mesmo tratamento (750 se fileprotect, 755 se nao)
     for my $dir ( "$home/public_html", "$home/.htpasswds" ) {
         next unless -d $dir;
-        chmod( $fileprotect ? 0750 : 0755 ), $dir;
+        chmod +( $fileprotect ? 0750 : 0755 ), $dir;
     }
 
     # public_ftp: 750 se noanonftp estiver ativo, senao 755
     my $public_ftp = "$home/public_ftp";
     if ( -d $public_ftp ) {
-        chmod( $noanonftp ? 0750 : 0755 ), $public_ftp;
+        chmod +( $noanonftp ? 0750 : 0755 ), $public_ftp;
     }
 
     # .ssh: 700 no dir e 600 nos arquivos (chaves privadas)
