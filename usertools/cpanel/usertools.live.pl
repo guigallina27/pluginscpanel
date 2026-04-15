@@ -185,243 +185,267 @@ sub _body_html {
 <style>
 \@import url('https://fonts.googleapis.com/css2?family=Inter:wght\@400;500;600;700&display=swap');
 
-.usertools-root {
-  --ut-bg-primary: #F8FAFC;
-  --ut-bg-secondary: #FFFFFF;
-  --ut-bg-surface: #F1F5F9;
-  --ut-text-primary: #0F172A;
-  --ut-text-muted: #64748B;
-  --ut-accent: #8b5cf6;
-  --ut-accent-hover: #7c3aed;
-  --ut-sapphire: #4f46e5;
+.ut {
+  --ut-bg:         #FFFFFF;
+  --ut-bg-alt:     #F8FAFC;
+  --ut-bg-hover:   #F1F5F9;
+  --ut-text:       #0F172A;
+  --ut-text-dim:   #475569;
+  --ut-text-mute:  #94A3B8;
+  --ut-border:     #E2E8F0;
+  --ut-border-str: #CBD5E1;
+  --ut-accent:     #8b5cf6;
+  --ut-accent-hover:#7c3aed;
+  --ut-sapphire:   #4f46e5;
   --ut-sapphire-hover: #4338ca;
-  --ut-border: #E2E8F0;
-  --ut-error: #ef4444;
-  --ut-success: #10b981;
-  --ut-info: #3b82f6;
-  --ut-warn: #f59e0b;
+  --ut-danger:     #ef4444;
+  --ut-danger-dim: rgba(239, 68, 68, 0.1);
+  --ut-warn:       #f59e0b;
+  --ut-warn-dim:   rgba(245, 158, 11, 0.15);
+  --ut-success:    #10b981;
+  --ut-success-dim:rgba(16, 185, 129, 0.1);
 
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  color: var(--ut-text-primary);
+  color: var(--ut-text);
   font-size: 14px;
   line-height: 1.6;
-  max-width: 900px;
-  margin: 30px auto;
-  padding: 0 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.ut, .ut * { box-sizing: border-box; }
+
+.ut-page-header {
+  display: flex; align-items: center; gap: 18px;
+  padding-bottom: 24px; margin-bottom: 28px;
+  border-bottom: 1px solid var(--ut-border);
+}
+.ut-page-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--ut-accent), var(--ut-sapphire));
+  color: #fff; font-size: 26px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+}
+.ut-page-text { flex: 1; min-width: 0; }
+.ut-page-title { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--ut-text); }
+.ut-page-subtitle { margin: 4px 0 0; font-size: 14px; color: var(--ut-text-dim); }
+.ut-role-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: rgba(79, 70, 229, 0.1);
+  color: var(--ut-sapphire);
+  border-radius: 20px;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  flex-shrink: 0;
+  border: 1px solid rgba(79, 70, 229, 0.2);
 }
 
-\@media (prefers-color-scheme: dark) {
-  .usertools-root {
-    --ut-bg-primary: #0F172A;
-    --ut-bg-secondary: #1E293B;
-    --ut-bg-surface: #334155;
-    --ut-text-primary: #F8FAFC;
-    --ut-text-muted: #94A3B8;
-    --ut-border: #334155;
-  }
+.ut-alert {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 16px 20px;
+  background: var(--ut-warn-dim);
+  border-left: 4px solid var(--ut-warn);
+  border-radius: 8px;
+  font-size: 14px; color: var(--ut-text);
+  margin-bottom: 32px;
 }
+.ut-alert i { color: var(--ut-warn); font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.ut-alert strong { font-weight: 600; color: var(--ut-text); }
 
-.usertools-root * { box-sizing: border-box; }
-
-.usertools-root .card {
-  background: var(--ut-bg-secondary);
+.ut-section {
+  margin-bottom: 32px;
+  background: var(--ut-bg);
   border: 1px solid var(--ut-border);
   border-radius: 16px;
   padding: 32px;
-  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
 }
-.usertools-root .card-header {
-  display: flex; align-items: center; gap: 18px;
-  margin-bottom: 24px; padding-bottom: 20px;
-  border-bottom: 1px solid var(--ut-border);
+.ut-section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 16px; gap: 16px;
 }
-.usertools-root .icon-wrap {
-  width: 56px; height: 56px; border-radius: 14px;
-  background: linear-gradient(135deg, var(--ut-accent), var(--ut-sapphire));
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 26px; flex-shrink: 0;
-  box-shadow: 0 4px 14px 0 rgba(139,92,246,0.39);
+.ut-section-title {
+  font-size: 14px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--ut-text-dim);
 }
-.usertools-root h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
-.usertools-root .subtitle { margin: 6px 0 0; font-size: 14px; color: var(--ut-text-muted); }
+.ut-section-hint { font-size: 13px; font-weight: 500; color: var(--ut-text-mute); }
 
-.usertools-root .info-box {
-  margin: 0 0 24px; padding: 16px 20px;
-  background: var(--ut-bg-surface);
-  border-left: 4px solid var(--ut-info);
-  border-radius: 8px;
-  display: flex; align-items: flex-start; gap: 12px;
+.ut-account-card {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 20px;
+  background: linear-gradient(145deg, rgba(79, 70, 229, 0.05), rgba(139, 92, 246, 0.05));
+  border: 1px solid rgba(79, 70, 229, 0.2);
+  border-radius: 12px;
 }
-.usertools-root .info-box i { color: var(--ut-info); font-size: 18px; margin-top: 2px; }
+.ut-account-card > i { color: var(--ut-sapphire); font-size: 24px; flex-shrink: 0; }
+.ut-account-info { flex: 1; min-width: 0; }
+.ut-account-user { font-weight: 700; font-size: 16px; color: var(--ut-text); }
+.ut-account-label { color: var(--ut-text-dim); font-size: 13px; margin-top: 2px; }
 
-.usertools-root .actions { display: grid; grid-template-columns: 1fr; gap: 20px; }
-\@media (min-width: 768px) {
-  .usertools-root .actions { grid-template-columns: 1fr 1fr; }
+.ut-actions {
+  display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px;
 }
+.ut-actions .ut-btn { flex: 1 1 220px; }
+.ut-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 14px 24px;
+  border: 1px solid transparent; border-radius: 12px;
+  font-size: 15px; font-weight: 600; font-family: inherit;
+  cursor: pointer; outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ut-btn:active { transform: scale(0.98); }
+.ut-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.ut-btn i { font-size: 18px; }
 
-.usertools-root .action-card {
-  border: 1px solid var(--ut-border);
-  border-radius: 12px; padding: 24px;
-  background: var(--ut-bg-secondary);
-  display: flex; flex-direction: column; gap: 12px;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+.ut-btn-primary {
+  background: linear-gradient(to right, var(--ut-sapphire), var(--ut-accent));
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(79, 70, 229, 0.2);
 }
-.usertools-root .action-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 20px -8px rgba(0,0,0,0.08);
-  border-color: var(--ut-accent);
-}
-.usertools-root .action-card h3 {
-  margin: 0; font-size: 17px; font-weight: 600;
-  display: flex; align-items: center; gap: 10px;
-}
-.usertools-root .action-card h3.danger-title { color: var(--ut-error); }
-.usertools-root .action-card h3.primary-title { color: var(--ut-sapphire); }
-.usertools-root .action-card p {
-  margin: 0; font-size: 14px; color: var(--ut-text-muted); flex-grow: 1;
-}
-
-.usertools-root .btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 12px 20px; border: none; border-radius: 10px;
-  font-size: 14px; font-weight: 600; cursor: pointer;
-  font-family: inherit; transition: all 0.2s;
-  margin-top: 8px; outline: none;
-}
-.usertools-root .btn:active { transform: scale(0.98); }
-.usertools-root .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-.usertools-root .btn-danger {
-  background: rgba(239,68,68,0.1); color: var(--ut-error);
-  border: 1px solid rgba(239,68,68,0.2);
-}
-.usertools-root .btn-danger:hover:not(:disabled) {
-  background: var(--ut-error); color: #fff;
-  box-shadow: 0 4px 12px rgba(239,68,68,0.3);
-}
-.usertools-root .btn-primary {
-  background: linear-gradient(to right, var(--ut-sapphire), var(--ut-accent)); color: #fff;
-}
-.usertools-root .btn-primary:hover:not(:disabled) {
+.ut-btn-primary:hover:not(:disabled) {
   background: linear-gradient(to right, var(--ut-sapphire-hover), var(--ut-accent-hover));
-  box-shadow: 0 4px 14px rgba(139,92,246,0.4);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
 }
+.ut-btn-danger {
+  background: var(--ut-danger-dim); color: var(--ut-danger);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+.ut-btn-danger:hover:not(:disabled) {
+  background: var(--ut-danger); color: #fff;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+}
+.ut-btn-link {
+  background: none; border: none;
+  color: var(--ut-text-dim);
+  font-weight: 600; cursor: pointer; font-size: 14px;
+  padding: 8px 12px; border-radius: 8px; font-family: inherit;
+}
+.ut-btn-link:hover { background: var(--ut-bg-hover); color: var(--ut-text); }
 
-.usertools-root .result {
+.ut-result {
   margin-top: 24px; padding: 16px 20px;
-  border-radius: 10px; display: none; font-size: 14px;
-  word-break: break-word;
+  border-radius: 12px; font-size: 14px;
+  display: none; align-items: flex-start; gap: 12px;
+  word-break: break-word; line-height: 1.5;
+  animation: ut-slide 0.3s ease-out;
 }
-.usertools-root .result.show { display: flex; align-items: flex-start; gap: 12px; }
-.usertools-root .result.success {
-  background: rgba(16,185,129,0.1); color: var(--ut-success);
-  border: 1px solid rgba(16,185,129,0.2);
+\@keyframes ut-slide {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.usertools-root .result.error {
-  background: rgba(239,68,68,0.1); color: var(--ut-error);
-  border: 1px solid rgba(239,68,68,0.2);
+.ut-result.show { display: flex; }
+.ut-result i { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.ut-result.success {
+  background: var(--ut-success-dim); color: var(--ut-success);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.ut-result.error {
+  background: var(--ut-danger-dim); color: var(--ut-danger);
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-.usertools-root .user-pill {
-  display: inline-block; padding: 4px 12px; border-radius: 20px;
-  background: var(--ut-bg-surface);
-  border: 1px solid var(--ut-border);
-  font-weight: 500; font-size: 13px; color: var(--ut-accent);
-}
-
-.usertools-root .spinner {
-  display: inline-block; width: 16px; height: 16px;
+.ut-spinner {
+  display: inline-block; width: 18px; height: 18px;
   border: 2px solid currentColor; border-right-color: transparent;
   border-radius: 50%; animation: ut-spin 0.8s linear infinite;
 }
 \@keyframes ut-spin { to { transform: rotate(360deg); } }
 
-/* Modal - cores hardcoded para garantir opacidade independente do tema do cPanel */
-.ut-modal { position: fixed; inset: 0; background: rgba(15,23,42,0.75);
+/* Modal - cores hardcoded para opacidade garantida */
+.ut-modal {
+  position: fixed; inset: 0;
+  background: rgba(15, 23, 42, 0.75);
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  display: flex; align-items: center; justify-content: center; z-index: 99999; }
+  display: flex; align-items: center; justify-content: center;
+  z-index: 99999;
+}
 .ut-modal[hidden] { display: none !important; }
 .ut-modal-box {
   background: #FFFFFF; color: #0F172A;
+  border: 1px solid #E2E8F0;
   border-radius: 16px; padding: 32px;
   max-width: 460px; width: 90%;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   display: flex; flex-direction: column; gap: 20px;
-  border: 1px solid #E2E8F0;
+  animation: ut-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-\@media (prefers-color-scheme: dark) {
-  .ut-modal-box { background: #1E293B; color: #F8FAFC; border-color: #334155; }
+\@keyframes ut-pop {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
 }
-.ut-modal-icon { font-size: 38px; color: #f59e0b; text-align: center; line-height: 1; }
-.ut-modal-title { font-size: 18px; font-weight: 600; margin: 0; text-align: center; color: inherit; }
-.ut-modal-msg { font-size: 14px; color: #475569; margin: 0; text-align: center; line-height: 1.5; }
-\@media (prefers-color-scheme: dark) {
-  .ut-modal-msg { color: #CBD5E1; }
-}
-.ut-modal-actions { display: flex; gap: 12px; justify-content: center; margin-top: 4px; }
-.ut-modal-actions .btn { margin: 0; min-width: 120px; }
-.ut-modal-actions .btn-secondary {
-  background: #F1F5F9; color: #0F172A;
-  border: 1px solid #E2E8F0;
-}
-.ut-modal-actions .btn-secondary:hover:not(:disabled) {
-  background: #E2E8F0;
-}
-\@media (prefers-color-scheme: dark) {
-  .ut-modal-actions .btn-secondary {
-    background: #334155; color: #F8FAFC; border-color: #475569;
-  }
-  .ut-modal-actions .btn-secondary:hover:not(:disabled) { background: #475569; }
-}
+.ut-modal-icon { font-size: 38px; text-align: center; line-height: 1; color: #f59e0b; }
+.ut-modal-title { font-size: 18px; font-weight: 600; color: #0F172A; text-align: center; margin: 0; }
+.ut-modal-msg { font-size: 14px; color: #475569; text-align: center; margin: 0; line-height: 1.5; }
+.ut-modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
+.ut-modal-actions .ut-btn { flex: 1; min-width: 0; }
 </style>
 
-<div class="usertools-root">
-  <div class="card">
-    <div class="card-header">
-      <div class="icon-wrap"><i class="bi bi-tools" aria-hidden="true"></i></div>
-      <div>
-        <h2>Ferramentas de Manutencao</h2>
-        <p class="subtitle">Acoes de recuperacao na sua conta <span class="user-pill">$user</span></p>
-      </div>
+<div class="ut">
+  <header class="ut-page-header">
+    <div class="ut-page-icon"><i class="bi bi-tools" aria-hidden="true"></i></div>
+    <div class="ut-page-text">
+      <h1 class="ut-page-title">Ferramentas do Usuário</h1>
+      <p class="ut-page-subtitle">Ações de recuperação e manutenção na sua conta cPanel.</p>
     </div>
+    <span class="ut-role-badge">
+      <i class="bi bi-person-badge-fill" aria-hidden="true"></i>
+      Cliente
+    </span>
+  </header>
 
-    <div class="info-box">
-      <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
-      <div>
-        <strong>Quando usar:</strong> site travado, memoria esgotada, erros 403/500 apos upload via FTP/SSH, ou processos PHP-FPM presos consumindo recursos.
-      </div>
+  <div class="ut-alert" role="note">
+    <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+    <div>
+      <strong>Quando usar:</strong> site travado, memória esgotada, erros 403/500 após upload via FTP/SSH, cron em loop ou processos PHP-FPM consumindo recursos. As ações afetam apenas a sua conta.
     </div>
-
-    <div class="actions">
-      <div class="action-card">
-        <h3 class="danger-title"><i class="bi bi-cpu" aria-hidden="true"></i> Encerrar processos</h3>
-        <p>Finaliza todos os processos ativos da sua conta (PHP-FPM, scripts travados, cron em loop). Servicos essenciais sao reiniciados automaticamente em seguida.</p>
-        <button id="ut-btn-kill" type="button" class="btn btn-danger">
-          <i class="bi bi-power" aria-hidden="true"></i> Encerrar processos
-        </button>
-      </div>
-
-      <div class="action-card">
-        <h3 class="primary-title"><i class="bi bi-shield-check" aria-hidden="true"></i> Reparar permissoes</h3>
-        <p>Restaura owner e permissoes dos seus document roots para os valores recomendados pelo cPanel (755 para pastas, 644 para arquivos, 755 para scripts).</p>
-        <button id="ut-btn-fix" type="button" class="btn btn-primary">
-          <i class="bi bi-wrench-adjustable" aria-hidden="true"></i> Reparar permissoes
-        </button>
-      </div>
-    </div>
-
-    <div id="ut-result" class="result" role="status" aria-live="polite"></div>
   </div>
-</div>
 
-<div id="ut-modal" class="ut-modal" hidden>
-  <div class="ut-modal-box">
-    <div class="ut-modal-icon"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i></div>
-    <h3 class="ut-modal-title" id="ut-modal-title"></h3>
-    <p class="ut-modal-msg" id="ut-modal-msg"></p>
-    <div class="ut-modal-actions">
-      <button type="button" class="btn btn-secondary" id="ut-modal-cancel">Cancelar</button>
-      <button type="button" class="btn btn-primary" id="ut-modal-ok">Confirmar</button>
+  <section class="ut-section">
+    <div class="ut-section-head">
+      <span class="ut-section-title">Conta selecionada</span>
+      <span class="ut-section-hint">Sessão atual</span>
+    </div>
+    <div class="ut-account-card">
+      <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+      <div class="ut-account-info">
+        <div class="ut-account-user">$user</div>
+        <div class="ut-account-label">As operações serão executadas neste usuário cPanel.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ut-section">
+    <div class="ut-section-head">
+      <span class="ut-section-title">Painel de ações</span>
+    </div>
+    <div class="ut-actions">
+      <button id="ut-btn-kill" type="button" class="ut-btn ut-btn-danger">
+        <i class="bi bi-power" aria-hidden="true"></i>
+        Finalizar processos
+      </button>
+      <button id="ut-btn-fix" type="button" class="ut-btn ut-btn-primary">
+        <i class="bi bi-wrench-adjustable" aria-hidden="true"></i>
+        Corrigir permissões &amp; owner
+      </button>
+    </div>
+    <div id="ut-result" class="ut-result" role="status" aria-live="polite"></div>
+  </section>
+
+  <div id="ut-modal" class="ut-modal" hidden>
+    <div class="ut-modal-box">
+      <div class="ut-modal-icon"><i id="ut-modal-icon" class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i></div>
+      <h3 id="ut-modal-title" class="ut-modal-title">Confirme</h3>
+      <p id="ut-modal-msg" class="ut-modal-msg"></p>
+      <div class="ut-modal-actions">
+        <button id="ut-modal-cancel" type="button" class="ut-btn ut-btn-link">Cancelar</button>
+        <button id="ut-modal-confirm" type="button" class="ut-btn ut-btn-primary">Confirmar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -429,83 +453,93 @@ sub _body_html {
 <script>
 (function() {
   'use strict';
-  const URL_SELF = window.location.pathname;
-  const btnKill  = document.getElementById('ut-btn-kill');
-  const btnFix   = document.getElementById('ut-btn-fix');
-  const result   = document.getElementById('ut-result');
-  const modal    = document.getElementById('ut-modal');
-  const mTitle   = document.getElementById('ut-modal-title');
-  const mMsg     = document.getElementById('ut-modal-msg');
-  const mOk      = document.getElementById('ut-modal-ok');
-  const mCancel  = document.getElementById('ut-modal-cancel');
+  var URL_SELF = window.location.pathname;
+  var btnKill  = document.getElementById('ut-btn-kill');
+  var btnFix   = document.getElementById('ut-btn-fix');
+  var result   = document.getElementById('ut-result');
+  var modal    = document.getElementById('ut-modal');
+  var mIcon    = document.getElementById('ut-modal-icon');
+  var mTitle   = document.getElementById('ut-modal-title');
+  var mMsg     = document.getElementById('ut-modal-msg');
+  var mOk      = document.getElementById('ut-modal-confirm');
+  var mCancel  = document.getElementById('ut-modal-cancel');
 
   function showResult(ok, msg) {
-    const icon = ok
-      ? '<i class="bi bi-check-circle-fill" style="margin-top:2px;font-size:18px"></i>'
-      : '<i class="bi bi-exclamation-triangle-fill" style="margin-top:2px;font-size:18px"></i>';
-    result.className = 'result show ' + (ok ? 'success' : 'error');
-    result.innerHTML = icon + '<div>' + msg + '</div>';
+    result.className = 'ut-result show ' + (ok ? 'success' : 'error');
+    result.innerHTML = '';
+    var i = document.createElement('i');
+    i.className = 'bi ' + (ok ? 'bi-check-circle-fill' : 'bi-x-octagon-fill');
+    result.appendChild(i);
+    var s = document.createElement('span');
+    s.textContent = msg;
+    result.appendChild(s);
   }
-  function clearResult() { result.className = 'result'; result.innerHTML = ''; }
+  function clearResult() { result.className = 'ut-result'; result.innerHTML = ''; }
 
-  function confirmModal(title, msg) {
-    return new Promise(resolve => {
-      mTitle.textContent = title;
-      mMsg.textContent   = msg;
+  function customConfirm(actionType, msgHtml) {
+    return new Promise(function(resolve) {
+      mMsg.innerHTML = msgHtml;
+      if (actionType === 'kill_procs') {
+        mTitle.textContent = 'Finalizar processos';
+        mIcon.className = 'bi bi-lightning-charge-fill';
+        mIcon.style.color = 'var(--ut-danger)';
+        mOk.className = 'ut-btn ut-btn-danger';
+        mOk.innerHTML = '<i class="bi bi-power"></i> Finalizar agora';
+      } else {
+        mTitle.textContent = 'Corrigir permissões';
+        mIcon.className = 'bi bi-shield-check';
+        mIcon.style.color = 'var(--ut-sapphire)';
+        mOk.className = 'ut-btn ut-btn-primary';
+        mOk.innerHTML = '<i class="bi bi-wrench-adjustable"></i> Aplicar correção';
+      }
       modal.hidden = false;
-      const done = (val) => {
-        modal.hidden = true;
-        mOk.onclick = mCancel.onclick = null;
-        resolve(val);
-      };
-      mOk.onclick     = () => done(true);
-      mCancel.onclick = () => done(false);
+      mOk.onclick     = function() { modal.hidden = true; resolve(true); };
+      mCancel.onclick = function() { modal.hidden = true; resolve(false); };
     });
   }
 
-  async function runAction(act, btn, confirmTitle, confirmMsg) {
-    const ok = await confirmModal(confirmTitle, confirmMsg);
-    if (!ok) return;
+  function runAction(act, btn, msgHtml) {
+    customConfirm(act, msgHtml).then(function(ok) {
+      if (!ok) return;
+      var originalHTML = btn.innerHTML;
+      btnKill.disabled = true; btnFix.disabled = true;
+      btn.innerHTML = '<span class="ut-spinner"></span> Processando...';
+      clearResult();
 
-    const originalHTML = btn.innerHTML;
-    btnKill.disabled = true;
-    btnFix.disabled  = true;
-    btn.innerHTML = '<span class="spinner"></span> Processando...';
-    clearResult();
-
-    try {
-      const form = new FormData();
+      var form = new FormData();
       form.append('action', act);
-      const r = await fetch(URL_SELF, {
-        method: 'POST', body: form, credentials: 'same-origin'
-      });
-      const text = await r.text();
-      let d;
-      try { d = JSON.parse(text); }
-      catch (e) {
-        showResult(false, 'Resposta invalida do servidor. Detalhe tecnico: ' + e.message);
-        return;
-      }
-      showResult(!!d.success, d.message || (d.success ? 'Operacao concluida.' : 'Nao foi possivel concluir a operacao.'));
-    } catch (e) {
-      showResult(false, 'Falha na comunicacao com o servidor: ' + e.message);
-    } finally {
-      btn.innerHTML = originalHTML;
-      btnKill.disabled = false;
-      btnFix.disabled  = false;
-    }
+
+      fetch(URL_SELF, { method: 'POST', body: form, credentials: 'same-origin' })
+        .then(function(r) { return r.text(); })
+        .then(function(text) {
+          var d;
+          try { d = JSON.parse(text); }
+          catch (e) {
+            showResult(false, 'Resposta inválida do servidor: ' + e.message);
+            return;
+          }
+          showResult(!!d.success, d.message || (d.success ? 'Operação concluída.' : 'Não foi possível concluir a operação.'));
+        })
+        .catch(function(e) { showResult(false, 'Falha na comunicação: ' + e.message); })
+        .then(function() {
+          btn.innerHTML = originalHTML;
+          btnKill.disabled = false; btnFix.disabled = false;
+        });
+    });
   }
 
-  btnKill.addEventListener('click', () => runAction(
-    'kill_procs', btnKill,
-    'Encerrar todos os seus processos?',
-    'Isso ira finalizar scripts PHP, cron jobs e conexoes ativas da sua conta. O site pode ficar indisponivel por alguns segundos enquanto o cPanel reinicia os servicos essenciais.'
-  ));
-  btnFix.addEventListener('click', () => runAction(
-    'fix_perms', btnFix,
-    'Reparar permissoes dos seus arquivos?',
-    'O cPanel ira ajustar owner e permissoes dos diretorios public_html e de dominios adicionados aos valores padrao (pastas 755, arquivos 644, scripts 755). A operacao pode levar alguns segundos conforme o volume de arquivos.'
-  ));
+  btnKill.addEventListener('click', function() {
+    runAction('kill_procs', btnKill,
+      'Isso irá encerrar TODOS os processos ativos da sua conta (PHP-FPM, cron em execução, sessões SSH e scripts em loop).<br><br>' +
+      'O site pode ficar indisponível por alguns segundos enquanto o cPanel reinicia os serviços essenciais.'
+    );
+  });
+  btnFix.addEventListener('click', function() {
+    runAction('fix_perms', btnFix,
+      'O cPanel irá varrer todos os seus document roots (public_html e domínios adicionados) e restaurar owner e permissões padrão.<br><br>' +
+      'Pastas <strong>755</strong>, arquivos <strong>644</strong>, scripts <strong>.cgi/.pl</strong> <strong>755</strong>. A operação pode levar alguns segundos.'
+    );
+  });
 })();
 </script>
 HTML
