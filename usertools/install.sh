@@ -57,7 +57,7 @@ rm -rf "/usr/local/cpanel/base/frontend/jupiter/${PLUGIN_NAME}" 2>/dev/null || t
 
 echo "  - cPanel frontend em ${CPANEL_FRONTEND_DIR}"
 mkdir -p "${CPANEL_FRONTEND_DIR}"
-install -o cpanel -g cpanel -m 0755 \
+install -o root -g root -m 0755 \
     "${SRC_DIR}/cpanel/usertools.live.pl" \
     "${CPANEL_FRONTEND_DIR}/usertools.live.pl"
 
