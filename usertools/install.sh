@@ -83,7 +83,11 @@ echo "  - Removendo registros antigos de AppConfig e Plugin (limpeza)..."
 # da feature - resultado: nunca aparece no Feature Manager nem ao usuario.
 ADDON_FEATURES_DIR="/usr/local/cpanel/whostmgr/addonfeatures"
 if [[ -d "${ADDON_FEATURES_DIR}" ]]; then
-    echo "Ferramentas do Usuário" > "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
+    # Formato obrigatorio: 'nomefeature:DisplayName' em ASCII puro.
+    # Apenas o DisplayName (sem o prefixo 'nomefeature:') faz a UI do
+    # Feature Manager renderizar em branco (so o selo 'Plugin' aparece).
+    # Acentos UTF-8 tambem quebram a renderizacao do nome na UI.
+    echo "${PLUGIN_NAME}:Ferramentas do Usuario" > "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
     chown root:root "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
     chmod 0644 "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
 
