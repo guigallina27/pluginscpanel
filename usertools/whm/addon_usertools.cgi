@@ -27,13 +27,32 @@ Whostmgr::ACLS::init_acls();
 my $cgi  = CGI->new;
 my $json = JSON::XS->new->utf8;
 
-# Só root ou revendedor passam daqui.
-if ( !Whostmgr::ACLS::hasroot() && !Whostmgr::ACLS::hasreseller() ) {
+# O WHM so aceita root ou reseller autenticado no endpoint /cgi/addons/,
+# entao se chegou aqui com REMOTE_USER definido ja esta autorizado.
+# hasroot() distingue root de reseller. Whostmgr::ACLS nao expoe
+# hasreseller() na versao atual do cPanel - detectamos reseller como
+# 'autenticado e nao-root' com fallback em /var/cpanel/resellers.
+my $remote = $ENV{'REMOTE_USER'} || '';
+if ( !$remote ) {
     print "Status: 403 Forbidden\r\nContent-type: text/plain\r\n\r\nAcesso negado.";
     exit;
 }
 
-my $is_root  = Whostmgr::ACLS::hasroot();
+my $is_root = Whostmgr::ACLS::hasroot();
+if ( !$is_root ) {
+    # Valida que o nome esta na lista de resellers (defesa extra).
+    my $is_reseller = 0;
+    if ( open( my $rfh, '<', '/var/cpanel/resellers' ) ) {
+        while ( my $line = <$rfh> ) {
+            if ( $line =~ /^\Q$remote\E\s*:/ ) { $is_reseller = 1; last; }
+        }
+        close $rfh;
+    }
+    if ( !$is_reseller ) {
+        print "Status: 403 Forbidden\r\nContent-type: text/plain\r\n\r\nAcesso negado.";
+        exit;
+    }
+}
 my $reseller = $ENV{'REMOTE_USER'} || '';
 my $action   = $cgi->param('action') || '';
 
