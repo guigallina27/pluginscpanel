@@ -56,8 +56,11 @@ sub KILL_PROCS {
 
     return {
         success => \1,
-        message => "Finalização iniciada ($before processos detectados). "
-            . "Sua sessão pode cair por alguns segundos — recarregue a página se isso sub FIX_PERMS {
+        message => "Finalização iniciada ($before processos detectados). Sua sessão pode cair por alguns segundos — recarregue a página se isso ocorrer."
+    };
+}
+
+sub FIX_PERMS {
     my ($self) = @_;
     my $user = _assert_user( $self->get_caller_username() );
 

@@ -103,8 +103,11 @@ fi
 echo "  - Limpando caches e recarregando cpsrvd"
 /usr/local/cpanel/scripts/rebuild_sprites 2>/dev/null || true
 
-# Força recarga do Feature Manager e do chrome do WHM/cPanel.
+# Força recarga do Feature Manager, AppConfigs compiladas e do chrome do WHM/cPanel.
 # cpsrvd serve tanto WHM quanto cPanel; o restart é quase instantâneo.
+if [[ -x /usr/local/cpanel/bin/build_dynamicui ]]; then
+    /usr/local/cpanel/bin/build_dynamicui >/dev/null 2>&1 || true
+fi
 if [[ -x /usr/local/cpanel/scripts/restartsrv_cpsrvd ]]; then
     /usr/local/cpanel/scripts/restartsrv_cpsrvd >/dev/null 2>&1 || true
 fi
