@@ -119,6 +119,8 @@ if [[ -d "${FEATURES_DIR}" ]]; then
         case "$(basename "$flist")" in
             *.lock|*.cache|*.swp) continue ;;
         esac
+        # Pula a lista 'disabled' (lista de features globalmente bloqueadas).
+        [[ "$(basename "$flist")" == "disabled" ]] && continue
         if ! grep -q "^${PLUGIN_NAME}=" "$flist" 2>/dev/null; then
             echo "${PLUGIN_NAME}=1" >> "$flist"
         fi
@@ -139,6 +141,11 @@ if command -v whmapi1 >/dev/null 2>&1; then
             fname=$(basename "$flist")
             case "$fname" in
                 *.lock|*.cache|*.swp) continue ;;
+                # A featurelist 'disabled' eh a lista de features globalmente
+                # BLOQUEADAS. Habilitar aqui faz a UI mostrar a feature como
+                # 'Desabilitado' forcado e impede o admin de marca-la em
+                # outras listas. NUNCA setar usertools=1 aqui.
+                disabled) continue ;;
             esac
             whmapi1 update_featurelist "featurelist=${fname}" "${PLUGIN_NAME}=1" >/dev/null 2>&1 || true
         done < <(find "${FEATURES_DIR}" -maxdepth 1 -type f -print0)
