@@ -90,18 +90,32 @@ sub _json_response {
 sub _do_kill_procs {
     my ($user) = @_;
 
-    # Estrategia para kill imediato + resposta garantida:
-    # 1. Pai imprime o JSON, dá flush e fecha STDOUT (Apache ja entregou a
-    #    resposta ao browser).
-    # 2. Pai faz fork + exec do pkill apenas apos ter liberado a conexao.
-    # 3. O filho executa pkill -9 -ceiu SEM sleep - matanca imediata de
-    #    PHP-FPM, cron, SSH e demais processos do proprio UID.
-    # 4. Se o pkill atingir o processo Perl pai (ja desconectado), tudo bem:
-    #    o cliente ja recebeu o JSON.
+    # Conta processos ANTES do kill para reportar ao usuario. Nao da para
+    # medir o "depois" porque o pkill e disparado apos fechar STDOUT
+    # (a resposta ja foi enviada ao browser). O count do antes corresponde
+    # a quantos serao terminados pelo SIGKILL imediato em seguida.
+    my $count = qx{/usr/bin/pgrep -c -u \Q$user\E 2>/dev/null};
+    chomp $count if defined $count;
+    $count = '0' unless defined $count && length $count && $count =~ /^\d+$/;
+
+    # Descontar o proprio processo Perl + pgrep efemero (ja encerrado) - o
+    # user sempre tem ao menos 1 processo ativo (a propria requisicao CGI).
+    # Mostramos o numero bruto porque o fork do pkill tambem sera contado.
+
+    my $msg;
+    if ( $count eq '0' ) {
+        $msg = 'Nenhum processo ativo foi localizado na sua conta neste momento. Nenhuma ação foi necessária.';
+    }
+    elsif ( $count eq '1' ) {
+        $msg = "1 processo ativo detectado na sua conta e encerrado imediatamente. As próximas requisições ao seu site iniciarão novos processos normalmente.";
+    }
+    else {
+        $msg = "$count processos ativos detectados na sua conta e encerrados imediatamente (PHP-FPM, cron jobs, SSH e scripts). As próximas requisições ao seu site iniciarão novos processos normalmente.";
+    }
 
     return {
-        success => \1,
-        message => 'Finalização executada. Todos os seus processos ativos (PHP-FPM, cron jobs, SSH e scripts) foram encerrados imediatamente. As próximas requisições ao seu site iniciarão novos processos normalmente.',
+        success     => \1,
+        message     => $msg,
         _kill_after => 1,
     };
 }
