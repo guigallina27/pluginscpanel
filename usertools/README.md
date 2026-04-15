@@ -35,12 +35,18 @@ usertools/
 
 ## Instalação
 
-Envie a pasta inteira para o servidor e rode como `root`:
+No servidor cPanel/WHM, como `root`:
 
 ```bash
-cd /root
-# upload do diretório usertools aqui
-bash usertools/install.sh
+git clone https://github.com/guigallina27/pluginscpanel.git /opt/pluginscpanel
+bash /opt/pluginscpanel/usertools/install.sh
+```
+
+Se o repositório já estiver clonado, basta:
+
+```bash
+cd /opt/pluginscpanel && git pull
+bash /opt/pluginscpanel/usertools/install.sh
 ```
 
 O instalador:
@@ -58,7 +64,7 @@ Depois da instalação:
 ## Desinstalação
 
 ```bash
-bash usertools/uninstall.sh
+bash /opt/pluginscpanel/usertools/uninstall.sh
 ```
 
 Remove arquivos, desregistra AppConfigs e apaga o AdminBin.

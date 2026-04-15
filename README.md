@@ -8,11 +8,26 @@ Coleção de plugins próprios para cPanel/WHM.
 
 ## Instalação
 
-Cada plugin traz seu próprio `install.sh`. Envie a pasta para o servidor e rode como root:
+No servidor cPanel/WHM, como `root`:
 
 ```bash
-scp -r usertools root@servidor:/root/
-ssh root@servidor "bash /root/usertools/install.sh"
+git clone https://github.com/guigallina27/pluginscpanel.git /opt/pluginscpanel
+bash /opt/pluginscpanel/usertools/install.sh
 ```
 
-Detalhes no README de cada plugin.
+Rode `install.sh` de cada plugin que quiser ativar.
+
+## Atualização
+
+```bash
+cd /opt/pluginscpanel && git pull
+bash /opt/pluginscpanel/usertools/install.sh   # reinstala por cima, sem perder config
+```
+
+## Desinstalação
+
+```bash
+bash /opt/pluginscpanel/usertools/uninstall.sh
+```
+
+Detalhes específicos no README de cada plugin.
