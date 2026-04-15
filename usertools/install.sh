@@ -86,7 +86,18 @@ if [[ -d "${ADDON_FEATURES_DIR}" ]]; then
     echo "Ferramentas do Usuário" > "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
     chown root:root "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
     chmod 0644 "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
-    echo "  - Feature '${PLUGIN_NAME}' registrada no Feature Manager"
+
+    # CRITICO: o Feature Manager le de addonfeatures.txt (indice), nao do
+    # diretorio. Criar apenas o arquivo da feature faz ela existir em
+    # get_featurelist_data mas NAO aparecer na UI do Feature Manager.
+    ADDON_INDEX="${ADDON_FEATURES_DIR}/addonfeatures.txt"
+    touch "${ADDON_INDEX}"
+    if ! grep -qx "${PLUGIN_NAME}" "${ADDON_INDEX}" 2>/dev/null; then
+        echo "${PLUGIN_NAME}" >> "${ADDON_INDEX}"
+    fi
+    chown root:root "${ADDON_INDEX}"
+    chmod 0644 "${ADDON_INDEX}"
+    echo "  - Feature '${PLUGIN_NAME}' registrada no Feature Manager (arquivo + indice)"
 fi
 
 echo "  - Registrando AppConfig (WHM)"
@@ -115,15 +126,29 @@ fi
 # A feature list 'default' e compilada e nao fica em /var/cpanel/features/,
 # entao injetamos via whmapi1 para garantir que o plano padrao (usado pela
 # maioria dos usuarios de teste) enxergue o icone.
+# Habilita a feature em TODAS as feature lists via whmapi1 (inclui a 'default'
+# compilada e qualquer lista com espaco no nome). Sintaxe correta: usertools=1
+# (sem prefixo 'features.'; com o prefixo o cPanel retorna invalid_features).
 if command -v whmapi1 >/dev/null 2>&1; then
-    whmapi1 update_featurelist featurelist=default "features.${PLUGIN_NAME}=1" >/dev/null 2>&1 || true
-    echo "  - Feature '${PLUGIN_NAME}' habilitada na feature list 'default' via whmapi1"
+    if [[ -d "${FEATURES_DIR}" ]]; then
+        while IFS= read -r -d '' flist; do
+            fname=$(basename "$flist")
+            case "$fname" in
+                *.lock|*.cache|*.swp) continue ;;
+            esac
+            whmapi1 update_featurelist "featurelist=${fname}" "${PLUGIN_NAME}=1" >/dev/null 2>&1 || true
+        done < <(find "${FEATURES_DIR}" -maxdepth 1 -type f -print0)
+    fi
+    whmapi1 update_featurelist featurelist=default "${PLUGIN_NAME}=1" >/dev/null 2>&1 || true
+    echo "  - Feature '${PLUGIN_NAME}' habilitada em todas as feature lists via whmapi1"
 fi
 
-# Limpa caches dynamicui por usuario para forcar recomputacao do chrome do cPanel.
+# Limpa caches dynamicui por usuario. O path e um DIRETORIO (.cpanel/caches/dynamicui/*),
+# nao arquivos 'dynamicui*'. Remover o conteudo forca recomputacao do chrome no proximo login.
 for userhome in /home/*/; do
-    [[ -d "${userhome}.cpanel/caches" ]] || continue
-    rm -f "${userhome}.cpanel/caches/dynamicui"* 2>/dev/null || true
+    cache_dir="${userhome}.cpanel/caches/dynamicui"
+    [[ -d "${cache_dir}" ]] || continue
+    rm -rf "${cache_dir}"/* 2>/dev/null || true
 done
 
 # --- Limpeza de cache + reload -----------------------------------------------
