@@ -73,6 +73,7 @@ install -o root -g root -m 0644 \
 # --- AppConfig registro ------------------------------------------------------
 echo "  - Removendo registros antigos de AppConfig (limpeza)..."
 /usr/local/cpanel/bin/unregister_appconfig usertools >/dev/null 2>&1 || true
+/usr/local/cpanel/bin/unregister_appconfig whm_usertools >/dev/null 2>&1 || true
 
 echo "  - Registrando AppConfig (WHM)"
 /usr/local/cpanel/bin/register_appconfig "${SRC_DIR}/whm/usertools.conf"
