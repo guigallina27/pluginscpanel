@@ -79,9 +79,20 @@ echo "  - Removendo registros antigos de AppConfig e Plugin (limpeza)..."
 echo "  - Registrando AppConfig (WHM)"
 /usr/local/cpanel/bin/register_appconfig "${SRC_DIR}/whm/usertools.conf"
 
-# --- Integracao Visual e Features (cPanel Jupiter Theme) ----------------------
-echo "  - Registrando API Plugin (cPanel & Feature Manager)"
-/usr/local/cpanel/scripts/install_plugin "${SRC_DIR}/cpanel" --theme jupiter
+echo "  - Registrando AppConfig (cPanel)"
+/usr/local/cpanel/bin/register_appconfig "${SRC_DIR}/cpanel/usertools.conf"
+
+# --- Feature Manager ---------------------------------------------------------
+# Registra a feature no Feature Manager do WHM (aparece na UI) e habilita
+# por padrão nas feature lists existentes (usadas pelos planos).
+ADDON_FEATURES_DIR="/usr/local/cpanel/whostmgr/addonfeatures"
+if [[ -d "${ADDON_FEATURES_DIR}" ]]; then
+    # O arquivo contém o displayname mostrado no Feature Manager
+    echo "Ferramentas do Usuário" > "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
+    chown root:root "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
+    chmod 0644 "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
+    echo "  - Feature '${PLUGIN_NAME}' registrada no Feature Manager"
+fi
 
 # Habilita a feature em todas as feature lists existentes — assim os planos
 # que usam essas lists passam a enxergar o ícone no cPanel imediatamente.
