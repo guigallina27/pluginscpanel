@@ -44,9 +44,24 @@
   max-width: 1000px;
   margin: 0 auto;
 }
-@media (max-width: 720px) {
-  .ut { padding: 20px 16px 32px; }
+/* Modal Customizado */
+.ut-modal {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; z-index: 9999;
 }
+.ut-modal[hidden] { display: none; }
+.ut-modal-box {
+  background: var(--ut-bg); border-radius: 16px; padding: 32px; max-width: 420px; width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex; flex-direction: column; gap: 24px; animation: ut-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ut-modal-icon { font-size: 38px; color: var(--ut-warn); text-align: center; line-height:1; }
+.ut-modal-title { font-size: 18px; font-weight: 600; color: var(--ut-text); text-align: center; margin:0; }
+.ut-modal-msg { font-size: 14px; color: var(--ut-text-dim); text-align: center; margin:0; line-height: 1.5; }
+.ut-modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
+.ut-modal-actions button { flex: 1; }
+@keyframes ut-pop { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+
 .ut, .ut * { box-sizing: border-box; }
 
 /* Header da página */
@@ -446,6 +461,21 @@
     </div>
     <div id="ut-result" class="ut-result" role="status" aria-live="polite"></div>
   </section>
+
+  <!-- Modal Customizado -->
+  <div id="ut-modal" class="ut-modal" hidden>
+    <div class="ut-modal-box">
+      <div class="ut-modal-icon"><i id="ut-modal-icon" class="bi bi-exclamation-triangle-fill"></i></div>
+      <div class="ut-modal-content">
+        <h3 id="ut-modal-title" class="ut-modal-title">Confirme</h3>
+        <p id="ut-modal-msg" class="ut-modal-msg"></p>
+      </div>
+      <div class="ut-modal-actions">
+        <button id="ut-modal-cancel" class="ut-btn ut-btn-link" style="color:var(--ut-text-dim)">Cancelar</button>
+        <button id="ut-modal-confirm" class="ut-btn">Ação</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -614,41 +644,75 @@
     if (!combo.contains(e.target)) closeList();
   });
 
+  function customConfirm(actionType, confirmMsg) {
+    return new Promise(function(resolve) {
+      document.getElementById('ut-modal-msg').innerHTML = confirmMsg;
+      
+      var btnConf = document.getElementById('ut-modal-confirm');
+      var btnCanc = document.getElementById('ut-modal-cancel');
+      var modal = document.getElementById('ut-modal');
+      var icon = document.getElementById('ut-modal-icon');
+      var title = document.getElementById('ut-modal-title');
+      
+      if(actionType === 'kill_procs') {
+          title.textContent = 'Alerta de Finalização';
+          btnConf.className = 'ut-btn ut-btn-danger';
+          btnConf.innerHTML = '<i class="bi bi-power"></i> Matar Processos';
+          icon.className = 'bi bi-lightning-charge-fill';
+          icon.style.color = 'var(--ut-danger)';
+      } else {
+          title.textContent = 'Aviso de Manutenção';
+          btnConf.className = 'ut-btn ut-btn-primary';
+          btnConf.innerHTML = '<i class="bi bi-wrench-adjustable"></i> Aplicar Correção';
+          icon.className = 'bi bi-shield-check';
+          icon.style.color = 'var(--ut-sapphire)';
+      }
+      
+      modal.hidden = false;
+      
+      btnConf.onclick = function() { modal.hidden = true; resolve(true); };
+      btnCanc.onclick = function() { modal.hidden = true; resolve(false); };
+    });
+  }
+
   function runAction(act, btn, confirmMsg) {
     if (!chosenUser) return;
-    if (!confirm(confirmMsg)) return;
+    
+    customConfirm(act, confirmMsg).then(function(ok) {
+      if (!ok) return;
 
-    var originalHTML = btn.innerHTML;
-    btnKill.disabled = true; btnFix.disabled = true;
-    btn.innerHTML = '<span class="ut-spinner"></span> Executando...';
-    clearResult();
+      var originalHTML = btn.innerHTML;
+      btnKill.disabled = true; btnFix.disabled = true;
+      btn.innerHTML = '<span class="ut-spinner"></span> Executando...';
+      clearResult();
 
-    var form = new FormData();
-    form.append('action', act);
-    form.append('user', chosenUser);
+      var form = new FormData();
+      form.append('action', act);
+      form.append('user', chosenUser);
 
-    jsonFetch(URL_SELF, { method: 'POST', body: form }).then(function(d) {
-      showResult(!!d.success, d.message || (d.success ? 'Concluído.' : 'Falhou.'));
-    }).catch(function(e) {
-      showResult(false, e.message || String(e));
-    }).then(function() {
-      btn.innerHTML = originalHTML;
-      btnKill.disabled = false; btnFix.disabled = false;
+      jsonFetch(URL_SELF, { method: 'POST', body: form }).then(function(d) {
+        showResult(!!d.success, d.message || (d.success ? 'Concluído.' : 'Falhou.'));
+      }).catch(function(e) {
+        showResult(false, e.message || String(e));
+      }).then(function() {
+        btn.innerHTML = originalHTML;
+        btnKill.disabled = false; btnFix.disabled = false;
+      });
     });
   }
 
   btnKill.addEventListener('click', function() {
     runAction(
       'kill_procs', btnKill,
-      'Finalizar TODOS os processos de "' + chosenUser + '"?\n\n' +
-      'Isso mata sites, cron, SSH e qualquer processo do usuário.'
+      'Finalizar TODOS os processos de "<strong>' + chosenUser + '</strong>"?<br><br>' +
+      'Mata os sites, filas de crontab, SSH e demais processos ativos locais desta conta imediatamente.'
     );
   });
   btnFix.addEventListener('click', function() {
     runAction(
       'fix_perms', btnFix,
-      'Corrigir owner e permissões do /home/' + chosenUser + '?\n\n' +
-      'Isso pode levar alguns segundos em contas grandes.'
+      'Corrigir owners e permissões em /home/<strong>' + chosenUser + '</strong>?<br><br>' +
+      'Isso efetuará as alterações em arquivos que o usuário não deveria ter alterado de propriedade de grupo. Este procedimento demora alguns minutos em instâncias pesadas.'
     );
   });
 
