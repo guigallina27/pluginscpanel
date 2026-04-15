@@ -11,7 +11,7 @@ PLUGIN_NAME="usertools"
 SRC_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 WHM_ADDON_DIR="/usr/local/cpanel/whostmgr/docroot/cgi/addons/${PLUGIN_NAME}"
-CPANEL_FRONTEND_DIR="/usr/local/cpanel/base/frontend/jupiter/${PLUGIN_NAME}"
+CPANEL_FRONTEND_DIR="/usr/local/cpanel/base/frontend/jupiter/3rdparty/${PLUGIN_NAME}"
 ADMINBIN_DIR="/usr/local/cpanel/bin/admin/Cpanel"
 TEMPLATES_DIR="/var/cpanel/addons/${PLUGIN_NAME}/templates"
 

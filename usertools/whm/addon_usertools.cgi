@@ -19,8 +19,6 @@ use CGI                              ();
 use JSON::XS                         ();
 use Cpanel::Template                 ();
 use Whostmgr::ACLS                   ();
-use Whostmgr::AcctInfo::Owner        ();
-use Whostmgr::Accounts               ();
 use Cpanel::AcctUtils::Account       ();
 
 Whostmgr::ACLS::init_acls();
@@ -61,31 +59,12 @@ sub json_out {
 }
 
 sub api_list_users {
-    my @users;
-
-    if ($is_root) {
-        my ( undef, $accts ) = Whostmgr::Accounts::listaccts();
-        @users = map { { user => $_->{user}, domain => $_->{domain} // '' } }
-            @{ $accts || [] };
+    my @users = eval { _list_cpanel_accounts() };
+    if ( my $err = $@ ) {
+        $err =~ s/\s+$//;
+        json_out( { success => \0, message => "Erro ao listar: $err" } );
+        return;
     }
-    else {
-        my ( undef, $accts ) = Whostmgr::Accounts::listaccts(
-            'searchtype' => 'owner',
-            'search'     => $reseller,
-        );
-        @users = map { { user => $_->{user}, domain => $_->{domain} // '' } }
-            @{ $accts || [] };
-    }
-
-    # Remove contas de sistema
-    @users = grep {
-        $_->{user} ne 'root'
-            && $_->{user} ne 'nobody'
-            && $_->{user} ne 'cpanel'
-    } @users;
-
-    @users = sort { $a->{user} cmp $b->{user} } @users;
-
     json_out( { success => \1, users => \@users } );
 }
 
@@ -106,25 +85,82 @@ sub api_run_action {
     }
 
     # Revendedor só atua em clientes dele
-    if ( !$is_root ) {
-        if ( !Whostmgr::AcctInfo::Owner::checkowner( $reseller, $target ) ) {
-            json_out(
-                {
-                    success => \0,
-                    message =>
-                        "Você não tem permissão para agir sobre '$target'.",
-                }
-            );
-            return;
-        }
+    if ( !$is_root && !_is_reseller_owner( $reseller, $target ) ) {
+        json_out(
+            {
+                success => \0,
+                message =>
+                    "Você não tem permissão para agir sobre '$target'.",
+            }
+        );
+        return;
     }
 
-    if ( $act eq 'kill_procs' ) {
-        do_kill_procs($target);
+    my $result = eval {
+        if ( $act eq 'kill_procs' ) { do_kill_procs($target); }
+        else                        { do_fix_perms($target); }
+        1;
+    };
+    if ( my $err = $@ ) {
+        $err =~ s/\s+$//;
+        json_out( { success => \0, message => "Falha na execução: $err" } );
     }
-    else {
-        do_fix_perms($target);
+}
+
+# Lê /var/cpanel/users/* — cada arquivo representa um usuário cPanel.
+# Formato: chaves no estilo KEY=value (DNS, DOMAIN, OWNER, etc).
+# Para reseller, filtra só quem tem OWNER=<reseller>.
+sub _list_cpanel_accounts {
+    my $users_dir = '/var/cpanel/users';
+    opendir( my $dh, $users_dir )
+        or die "Não foi possível abrir $users_dir: $!\n";
+
+    my @out;
+    while ( my $entry = readdir $dh ) {
+        next if $entry =~ /^\./;
+        next if $entry eq 'root' || $entry eq 'nobody' || $entry eq 'cpanel';
+        my $file = "$users_dir/$entry";
+        next unless -f $file;
+
+        my $info = _read_user_file($file);
+        next unless $info;
+
+        # Reseller: só seus clientes
+        if ( !$is_root ) {
+            next unless ( $info->{OWNER} // 'root' ) eq $reseller;
+        }
+
+        push @out,
+            {
+                user   => $entry,
+                domain => $info->{DOMAIN} // $info->{DNS} // '',
+            };
     }
+    closedir $dh;
+
+    @out = sort { $a->{user} cmp $b->{user} } @out;
+    return @out;
+}
+
+sub _read_user_file {
+    my ($file) = @_;
+    open( my $fh, '<', $file ) or return;
+    my %info;
+    while ( my $line = <$fh> ) {
+        chomp $line;
+        $info{$1} = $2 if $line =~ /^([A-Z0-9_]+)=(.*)$/;
+    }
+    close $fh;
+    return \%info;
+}
+
+sub _is_reseller_owner {
+    my ( $reseller, $user ) = @_;
+    my $file = "/var/cpanel/users/$user";
+    return 0 unless -f $file;
+    my $info = _read_user_file($file);
+    return 0 unless $info;
+    return ( $info->{OWNER} // 'root' ) eq $reseller ? 1 : 0;
 }
 
 sub do_kill_procs {
