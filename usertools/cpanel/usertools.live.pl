@@ -42,7 +42,10 @@ elsif ( $action eq 'fix_perms' ) {
 
 # Branch padrao: renderiza a UI HTML com o chrome do cPanel.
 print "Content-type: text/html; charset=utf-8\r\n\r\n";
-print $cpanel->header('Ferramentas');
+# O 2o argumento (app_key) eh obrigatorio para o cPanel resolver
+# breadcrumbs e o link 'Home'. Sem isso, ao sair da pagina o cPanel
+# cai em 404 porque nao sabe de qual app esta voltando.
+print $cpanel->header( 'Ferramentas do Usuário', 'usertools' );
 print _body_html($user);
 print $cpanel->footer();
 $cpanel->end();
