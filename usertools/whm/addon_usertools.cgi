@@ -270,23 +270,44 @@ sub do_fix_perms {
         '(', '-name', '*.cgi', '-o', '-name', '*.pl', '-o', '-name', '*.sh', ')',
         '-exec', '/bin/chmod', '755', '{}', '+');
 
-    # 4. Casos especiais (apos o find geral):
+    # 4. Casos especiais seguindo o padrao oficial /scripts/unsuspendacct.
+    #    WHM roda como root, entao chown para grupo 'nobody' e permitido.
     chmod 0711, $home;
 
-    my $public_html = "$home/public_html";
-    if (-d $public_html) {
-        my @nb = getgrnam('nobody');
-        my $nobody_gid = @nb ? $nb[2] : $user_gid;
-        chown $user_uid, $nobody_gid, $public_html;
-        chmod 0750, $public_html;
+    my $fileprotect = -e '/var/cpanel/fileprotect';
+    my $noanonftp   = -e '/var/cpanel/noanonftp';
+
+    my @nb = getgrnam('nobody');
+    my $nobody_gid = @nb ? $nb[2] : $user_gid;
+
+    # public_html e .htpasswds: com fileprotect viram user:nobody 750;
+    # sem fileprotect, user:user 755. Padrao do unsuspendacct.
+    for my $dir ("$home/public_html", "$home/.htpasswds") {
+        next unless -d $dir;
+        if ($fileprotect) {
+            chown $user_uid, $nobody_gid, $dir;
+            chmod 0750, $dir;
+        } else {
+            chown $user_uid, $user_gid, $dir;
+            chmod 0755, $dir;
+        }
     }
 
+    # public_ftp: com noanonftp vira 750 user:user; sem noanonftp, 755 user:user
+    my $public_ftp = "$home/public_ftp";
+    if (-d $public_ftp) {
+        chown $user_uid, $user_gid, $public_ftp;
+        chmod( $noanonftp ? 0750 : 0755 ), $public_ftp;
+    }
+
+    # .ssh: 700 user:user, arquivos 600 (chaves privadas SSH)
     my $ssh_dir = "$home/.ssh";
     if (-d $ssh_dir) {
         chmod 0700, $ssh_dir;
         system('/usr/bin/find', $ssh_dir, '-type', 'f', '-exec', '/bin/chmod', '600', '{}', '+');
     }
 
+    # etc/: 750 user:mail (dovecot/exim)
     my $etc_dir = "$home/etc";
     if (-d $etc_dir) {
         my @mg = getgrnam('mail');
@@ -296,12 +317,17 @@ sub do_fix_perms {
         }
     }
 
+    # mail/: 751
     my $mail_dir = "$home/mail";
     chmod 0751, $mail_dir if -d $mail_dir;
 
+    my $fp_note = $fileprotect
+        ? 'public_html e .htpasswds em 750 user:nobody (fileprotect ativo)'
+        : 'public_html e .htpasswds em 755 user:user (fileprotect desativado)';
+
     json_out({
         success => \1,
-        message => "Permissões normalizadas em toda a conta \"$user\". Diretórios em 755, arquivos em 644, scripts .cgi/.pl/.sh em 755. Permissões especiais aplicadas: home em 711, public_html em 750 (user:nobody), .ssh em 700 com chaves em 600, mail em 751, etc em 750 (user:mail). Dono restabelecido para o próprio usuário em todos os arquivos.",
+        message => "Permissões normalizadas em toda a conta \"$user\" seguindo o padrão oficial do cPanel. Diretórios em 755, arquivos em 644, scripts .cgi/.pl/.sh em 755. Permissões especiais: home em 711, $fp_note, public_ftp conforme política de FTP anônimo, .ssh em 700 com chaves em 600, mail em 751, etc em 750 (user:mail).",
     });
 }
 sub render_ui {

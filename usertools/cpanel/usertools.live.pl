@@ -151,30 +151,37 @@ sub _do_fix_perms {
         '(', '-name', '*.cgi', '-o', '-name', '*.pl', '-o', '-name', '*.sh', ')',
         '-exec', '/bin/chmod', '755', '{}', '+' );
 
-    # 4. Casos especiais (ordem importa - aplicar DEPOIS do find geral):
-    #    - $HOME: 711 (Apache/LSWS atravessa sem listar conteudo)
-    #    - public_html: 750 user:nobody (isola entre contas)
-    #    - .ssh: 700 user:user, arquivos 600 (seguranca de chaves)
-    #    - .htpasswds: 755 user:user (Apache precisa atravessar)
-    #    - mail/: 751 user:user
-    #    - etc/: 750 user:mail (dovecot/exim leem via grupo)
-    #    - logs/: manter 755 user:user
+    # 4. Casos especiais baseados no padrao oficial /scripts/unsuspendacct:
+    #    No contexto cPanel (user normal), o POSIX NAO permite chown para
+    #    grupo 'nobody' (user nao pertence ao grupo). Entao mantemos
+    #    user:user em tudo e aplicamos apenas os chmods corretos.
+    #    O fix completo (user:nobody quando fileprotect esta ativo) so
+    #    ocorre no WHM, que roda como root.
     chmod 0711, $home;
 
-    my $public_html = "$home/public_html";
-    if ( -d $public_html ) {
-        my @nb = getgrnam('nobody');
-        my $nobody_gid = @nb ? $nb[2] : $user_gid;
-        chown $user_uid, $nobody_gid, $public_html;
-        chmod 0750, $public_html;
+    my $fileprotect = -e '/var/cpanel/fileprotect';
+    my $noanonftp   = -e '/var/cpanel/noanonftp';
+
+    # public_html e .htpasswds: mesmo tratamento (750 se fileprotect, 755 se nao)
+    for my $dir ( "$home/public_html", "$home/.htpasswds" ) {
+        next unless -d $dir;
+        chmod( $fileprotect ? 0750 : 0755 ), $dir;
     }
 
+    # public_ftp: 750 se noanonftp estiver ativo, senao 755
+    my $public_ftp = "$home/public_ftp";
+    if ( -d $public_ftp ) {
+        chmod( $noanonftp ? 0750 : 0755 ), $public_ftp;
+    }
+
+    # .ssh: 700 no dir e 600 nos arquivos (chaves privadas)
     my $ssh_dir = "$home/.ssh";
     if ( -d $ssh_dir ) {
         chmod 0700, $ssh_dir;
         system( '/usr/bin/find', $ssh_dir, '-type', 'f', '-exec', '/bin/chmod', '600', '{}', '+' );
     }
 
+    # etc/ (dovecot/exim): 750 user:mail (se o grupo existir)
     my $etc_dir = "$home/etc";
     if ( -d $etc_dir ) {
         my @mg = getgrnam('mail');
@@ -184,15 +191,17 @@ sub _do_fix_perms {
         }
     }
 
+    # mail/: 751
     my $mail_dir = "$home/mail";
     chmod 0751, $mail_dir if -d $mail_dir;
 
-    # Arquivos sensiveis na raiz: .contactemail, .bashrc etc - 644 ja aplicado
-    # pelo find; nada adicional necessario.
+    my $fp_note = $fileprotect
+        ? 'public_html em 750 (fileprotect ativo)'
+        : 'public_html em 755 (fileprotect desativado neste servidor)';
 
     return {
         success => \1,
-        message => "Permissões normalizadas em toda a sua conta cPanel. Diretórios em 755, arquivos em 644, scripts .cgi/.pl/.sh em 755. Aplicadas também as permissões especiais do cPanel: home em 711, public_html em 750 (user:nobody), .ssh em 700 com chaves em 600, mail em 751, etc em 750 (user:mail). Dono restabelecido para \"$user\" em todos os arquivos.",
+        message => "Permissões normalizadas em toda a sua conta cPanel seguindo o padrão oficial do cPanel. Diretórios em 755, arquivos em 644, scripts .cgi/.pl/.sh em 755. Aplicadas permissões especiais: home em 711, $fp_note, .htpasswds igual ao public_html, public_ftp conforme política de FTP anônimo, .ssh em 700 com chaves em 600, mail em 751, etc em 750 (user:mail). Dono restabelecido para \"$user\" em todos os arquivos.",
     };
 }
 
