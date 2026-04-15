@@ -104,13 +104,20 @@ sub _do_kill_procs {
 
     my $msg;
     if ( $count eq '0' ) {
-        $msg = 'Nenhum processo ativo foi localizado na sua conta neste momento. Nenhuma ação foi necessária.';
-    }
-    elsif ( $count eq '1' ) {
-        $msg = "1 processo ativo detectado na sua conta e encerrado imediatamente. As próximas requisições ao seu site iniciarão novos processos normalmente.";
+        $msg = '<strong>Nenhum processo encontrado</strong><br>'
+             . 'Sua conta já estava ociosa no momento da operação — nenhuma ação foi necessária.';
     }
     else {
-        $msg = "$count processos ativos detectados na sua conta e encerrados imediatamente (PHP-FPM, cron jobs, SSH e scripts). As próximas requisições ao seu site iniciarão novos processos normalmente.";
+        my $plural = $count eq '1' ? 'processo ativo encerrado' : 'processos ativos encerrados';
+        $msg = '<strong>Finalização concluída</strong>'
+             . qq{<div style="display:flex;align-items:center;gap:12px;margin:10px 0 6px;">}
+             . qq{<span style="font-size:28px;font-weight:700;line-height:1;">$count</span>}
+             . qq{<span style="font-size:13px;opacity:0.85;">$plural<br>imediatamente via SIGKILL</span>}
+             . '</div>'
+             . '<div style="font-size:13px;opacity:0.85;margin-top:8px;">'
+             . 'Tipos finalizados: PHP-FPM, cron jobs, SSH e scripts em execução.<br>'
+             . 'As próximas requisições ao seu site iniciarão novos processos normalmente.'
+             . '</div>';
     }
 
     return {
@@ -209,14 +216,24 @@ sub _do_fix_perms {
     my $mail_dir = "$home/mail";
     chmod 0751, $mail_dir if -d $mail_dir;
 
-    my $fp_note = $fileprotect
-        ? 'public_html em 750 (fileprotect ativo)'
-        : 'public_html em 755 (fileprotect desativado neste servidor)';
+    my $pubhtml_mode = $fileprotect ? '750' : '755';
 
-    return {
-        success => \1,
-        message => "Permissões normalizadas em toda a sua conta cPanel seguindo o padrão oficial do cPanel. Diretórios em 755, arquivos em 644, scripts .cgi/.pl/.sh em 755. Aplicadas permissões especiais: home em 711, $fp_note, .htpasswds igual ao public_html, public_ftp conforme política de FTP anônimo, .ssh em 700 com chaves em 600, mail em 751, etc em 750 (user:mail). Dono restabelecido para \"$user\" em todos os arquivos.",
-    };
+    my $msg = '<strong>Permissões normalizadas</strong>'
+            . qq{<div style="font-size:13px;opacity:0.85;margin:8px 0;">}
+            . qq{Aplicado em toda a sua conta cPanel (<code style="font-weight:600">/home/$user</code>)}
+            . qq{</div>}
+            . qq{<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px;margin-top:8px;">}
+            . qq{<span style="font-weight:600;opacity:0.75;">Diretórios</span><span><code>755</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">Arquivos</span><span><code>644</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">Scripts .cgi/.pl/.sh</span><span><code>755</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">Home</span><span><code>711</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">public_html / .htpasswds</span><span><code>$pubhtml_mode</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">.ssh (e chaves)</span><span><code>700</code> / <code>600</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">mail</span><span><code>751</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">etc</span><span><code>750</code> user:mail</span>}
+            . qq{</div>};
+
+    return { success => \1, message => $msg };
 }
 
 # ============================================================================
@@ -514,14 +531,15 @@ sub _body_html {
   var mCancel  = document.getElementById('ut-modal-cancel');
 
   function showResult(ok, msg) {
+    // msg pode conter HTML estruturado vindo do backend (nosso proprio
+    // codigo). Como nao incorporamos input do usuario nas mensagens,
+    // e seguro usar innerHTML aqui. Tags permitidas: <strong>, <br>,
+    // <div>, <span>.
     result.className = 'ut-result show ' + (ok ? 'success' : 'error');
-    result.innerHTML = '';
-    var i = document.createElement('i');
-    i.className = 'bi ' + (ok ? 'bi-check-circle-fill' : 'bi-x-octagon-fill');
-    result.appendChild(i);
-    var s = document.createElement('span');
-    s.textContent = msg;
-    result.appendChild(s);
+    var icon = ok ? 'bi-check-circle-fill' : 'bi-x-octagon-fill';
+    result.innerHTML =
+      '<i class="bi ' + icon + '"></i>' +
+      '<div style="flex:1;min-width:0">' + msg + '</div>';
   }
   function clearResult() { result.className = 'ut-result'; result.innerHTML = ''; }
 

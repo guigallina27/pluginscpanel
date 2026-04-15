@@ -219,19 +219,35 @@ sub do_kill_procs {
     $killed = 0 if $killed < 0;
 
     my $msg;
-    my $ok = \1;
     if ( $killed > 0 ) {
-        my $plural = $killed == 1 ? 'processo foi encerrado' : 'processos foram encerrados';
-        $msg = "Finalização concluída: $killed $plural da conta \"$user\" (de $before ativos antes da operação restam $after). As próximas requisições ao site do usuário iniciarão novos processos normalmente.";
+        my $plural = $killed == 1 ? 'processo encerrado' : 'processos encerrados';
+        $msg = '<strong>Finalização concluída</strong>'
+             . qq{<div style="display:flex;align-items:center;gap:12px;margin:10px 0 6px;">}
+             . qq{<span style="font-size:28px;font-weight:700;line-height:1;">$killed</span>}
+             . qq{<span style="font-size:13px;opacity:0.85;">$plural<br>na conta <strong>$user</strong></span>}
+             . '</div>'
+             . qq{<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px;margin-top:8px;">}
+             . qq{<span style="font-weight:600;opacity:0.75;">Antes da operação</span><span>$before processos ativos</span>}
+             . qq{<span style="font-weight:600;opacity:0.75;">Após a operação</span><span>$after processos ativos</span>}
+             . qq{<span style="font-weight:600;opacity:0.75;">Método</span><span><code>pkill -9 -ceiu</code></span>}
+             . '</div>';
     }
     elsif ( $before eq '0' ) {
-        $msg = "A conta \"$user\" já estava ociosa — nenhum processo ativo foi encontrado. Nenhuma ação foi necessária.";
+        $msg = '<strong>Conta ociosa</strong><br>'
+             . qq{A conta <strong>$user</strong> não possuía processos ativos no momento da operação. Nenhuma ação foi necessária.};
     }
     else {
-        $msg = "Comando de finalização enviado, porém $after processo(s) continuam ativos (de $before detectados). Isso é normal: alguns processos são reiniciados imediatamente pelo sistema (PHP-FPM pool, cron). Aguarde um minuto e verifique novamente se o problema persiste.";
+        $msg = '<strong>Finalização parcial</strong>'
+             . qq{<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px;margin-top:8px;">}
+             . qq{<span style="font-weight:600;opacity:0.75;">Antes da operação</span><span>$before processos ativos</span>}
+             . qq{<span style="font-weight:600;opacity:0.75;">Após a operação</span><span>$after processos ativos (reiniciados pelo sistema)</span>}
+             . '</div>'
+             . qq{<div style="font-size:13px;opacity:0.85;margin-top:8px;">}
+             . 'Isso é normal: PHP-FPM pool e cron reiniciam automaticamente. Aguarde um minuto e verifique novamente se o problema persistir.'
+             . '</div>';
     }
 
-    json_out( { success => $ok, message => $msg } );
+    json_out( { success => \1, message => $msg } );
 }
 
 sub do_fix_perms {
@@ -321,14 +337,27 @@ sub do_fix_perms {
     my $mail_dir = "$home/mail";
     chmod 0751, $mail_dir if -d $mail_dir;
 
-    my $fp_note = $fileprotect
-        ? 'public_html e .htpasswds em 750 user:nobody (fileprotect ativo)'
-        : 'public_html e .htpasswds em 755 user:user (fileprotect desativado)';
+    my $pubhtml_mode  = $fileprotect ? '750' : '755';
+    my $pubhtml_owner = $fileprotect ? 'user:nobody' : 'user:user';
+    my $pubftp_mode   = $noanonftp ? '750' : '755';
 
-    json_out({
-        success => \1,
-        message => "Permissões normalizadas em toda a conta \"$user\" seguindo o padrão oficial do cPanel. Diretórios em 755, arquivos em 644, scripts .cgi/.pl/.sh em 755. Permissões especiais: home em 711, $fp_note, public_ftp conforme política de FTP anônimo, .ssh em 700 com chaves em 600, mail em 751, etc em 750 (user:mail).",
-    });
+    my $msg = '<strong>Permissões normalizadas</strong>'
+            . qq{<div style="font-size:13px;opacity:0.85;margin:8px 0;">}
+            . qq{Aplicado em toda a conta <strong>$user</strong> (<code>/home/$user</code>)}
+            . qq{</div>}
+            . qq{<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px;margin-top:8px;">}
+            . qq{<span style="font-weight:600;opacity:0.75;">Diretórios</span><span><code>755</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">Arquivos</span><span><code>644</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">Scripts .cgi/.pl/.sh</span><span><code>755</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">Home</span><span><code>711</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">public_html / .htpasswds</span><span><code>$pubhtml_mode</code> $pubhtml_owner</span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">public_ftp</span><span><code>$pubftp_mode</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">.ssh (e chaves)</span><span><code>700</code> / <code>600</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">mail</span><span><code>751</code></span>}
+            . qq{<span style="font-weight:600;opacity:0.75;">etc</span><span><code>750</code> user:mail</span>}
+            . qq{</div>};
+
+    json_out({ success => \1, message => $msg });
 }
 sub render_ui {
     my ($role) = @_;

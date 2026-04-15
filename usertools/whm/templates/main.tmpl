@@ -503,14 +503,14 @@
   var chosenUser = null;
 
   function showResult(ok, msg) {
+    // msg pode conter HTML estruturado vindo do backend (nosso proprio
+    // codigo). Nao incorporamos input do usuario nas mensagens - seguro
+    // usar innerHTML. Tags permitidas: <strong>, <br>, <div>, <span>, <code>.
     result.className = 'ut-result show ' + (ok ? 'success' : 'error');
-    result.innerHTML = '';
-    var i = document.createElement('i');
-    i.className = 'bi ' + (ok ? 'bi-check-circle-fill' : 'bi-x-octagon-fill');
-    result.appendChild(i);
-    var s = document.createElement('span');
-    s.textContent = msg;
-    result.appendChild(s);
+    var icon = ok ? 'bi-check-circle-fill' : 'bi-x-octagon-fill';
+    result.innerHTML =
+      '<i class="bi ' + icon + '"></i>' +
+      '<div style="flex:1;min-width:0">' + msg + '</div>';
   }
   function clearResult() { result.className = 'ut-result'; result.innerHTML = ''; }
 
