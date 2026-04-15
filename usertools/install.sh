@@ -41,7 +41,12 @@ install -o root -g root -m 0644 \
     "${SRC_DIR}/whm/templates/main.tmpl" \
     "${TEMPLATES_DIR}/main.tmpl"
 
-# --- cPanel (Jupiter theme) --------------------------------------------------
+# --- cPanel (Jupiter theme, pasta /3rdparty/) --------------------------------
+# Remove resíduos do path antigo (versões anteriores do plugin
+# colocavam em /jupiter/usertools/, que o register_appconfig rejeita
+# por não estar em /3rdparty/).
+rm -rf "/usr/local/cpanel/base/frontend/jupiter/${PLUGIN_NAME}" 2>/dev/null || true
+
 echo "  - cPanel frontend em ${CPANEL_FRONTEND_DIR}"
 mkdir -p "${CPANEL_FRONTEND_DIR}"
 install -o cpanel -g cpanel -m 0755 \
