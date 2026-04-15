@@ -336,23 +336,42 @@ sub _body_html {
 }
 \@keyframes ut-spin { to { transform: rotate(360deg); } }
 
-/* Modal */
-.ut-modal { position: fixed; inset: 0; background: rgba(15,23,42,0.6);
-  backdrop-filter: blur(4px); display: flex; align-items: center;
-  justify-content: center; z-index: 9999; }
-.ut-modal[hidden] { display: none; }
-.ut-modal-box { background: var(--ut-bg-secondary); border-radius: 16px;
-  padding: 32px; max-width: 460px; width: 90%;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25);
-  display: flex; flex-direction: column; gap: 20px; }
-.ut-modal-icon { font-size: 38px; color: var(--ut-warn); text-align: center; }
-.ut-modal-title { font-size: 18px; font-weight: 600; margin: 0; text-align: center; }
-.ut-modal-msg { font-size: 14px; color: var(--ut-text-muted); margin: 0; text-align: center; line-height: 1.5; }
-.ut-modal-actions { display: flex; gap: 12px; justify-content: center; }
+/* Modal - cores hardcoded para garantir opacidade independente do tema do cPanel */
+.ut-modal { position: fixed; inset: 0; background: rgba(15,23,42,0.75);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; z-index: 99999; }
+.ut-modal[hidden] { display: none !important; }
+.ut-modal-box {
+  background: #FFFFFF; color: #0F172A;
+  border-radius: 16px; padding: 32px;
+  max-width: 460px; width: 90%;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  display: flex; flex-direction: column; gap: 20px;
+  border: 1px solid #E2E8F0;
+}
+\@media (prefers-color-scheme: dark) {
+  .ut-modal-box { background: #1E293B; color: #F8FAFC; border-color: #334155; }
+}
+.ut-modal-icon { font-size: 38px; color: #f59e0b; text-align: center; line-height: 1; }
+.ut-modal-title { font-size: 18px; font-weight: 600; margin: 0; text-align: center; color: inherit; }
+.ut-modal-msg { font-size: 14px; color: #475569; margin: 0; text-align: center; line-height: 1.5; }
+\@media (prefers-color-scheme: dark) {
+  .ut-modal-msg { color: #CBD5E1; }
+}
+.ut-modal-actions { display: flex; gap: 12px; justify-content: center; margin-top: 4px; }
 .ut-modal-actions .btn { margin: 0; min-width: 120px; }
 .ut-modal-actions .btn-secondary {
-  background: var(--ut-bg-surface); color: var(--ut-text-primary);
-  border: 1px solid var(--ut-border);
+  background: #F1F5F9; color: #0F172A;
+  border: 1px solid #E2E8F0;
+}
+.ut-modal-actions .btn-secondary:hover:not(:disabled) {
+  background: #E2E8F0;
+}
+\@media (prefers-color-scheme: dark) {
+  .ut-modal-actions .btn-secondary {
+    background: #334155; color: #F8FAFC; border-color: #475569;
+  }
+  .ut-modal-actions .btn-secondary:hover:not(:disabled) { background: #475569; }
 }
 </style>
 
