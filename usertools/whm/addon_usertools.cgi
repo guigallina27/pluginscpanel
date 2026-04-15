@@ -171,7 +171,7 @@ sub do_kill_procs {
     chomp $before;
     $before = '0' unless defined $before && length $before;
 
-    system( '/usr/bin/pkill', '-9', '-u', $user );
+    system( '/usr/bin/pkill', '-9', '-ceiu', $user );
 
     sleep 1;
 

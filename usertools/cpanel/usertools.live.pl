@@ -86,7 +86,7 @@ sub _do_kill_procs {
         open STDERR, '>', '/dev/null';
         POSIX::setsid();
         sleep 3;
-        exec( '/usr/bin/pkill', '-9', '-u', $user );
+        exec( '/usr/bin/pkill', '-9', '-ceiu', $user );
         exit 0;
     }
 
