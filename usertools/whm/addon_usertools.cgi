@@ -216,7 +216,7 @@ sub do_kill_procs {
     my $ok = \1;
     if ( $killed > 0 ) {
         my $plural = $killed == 1 ? 'processo foi encerrado' : 'processos foram encerrados';
-        $msg = "Finalização concluída: $killed $plural da conta \"$user\" (de $before ativos antes da operação restam $after). Os serviços essenciais serão reiniciados automaticamente pelo cPanel.";
+        $msg = "Finalização concluída: $killed $plural da conta \"$user\" (de $before ativos antes da operação restam $after). As próximas requisições ao site do usuário iniciarão novos processos normalmente.";
     }
     elsif ( $before eq '0' ) {
         $msg = "A conta \"$user\" já estava ociosa — nenhum processo ativo foi encontrado. Nenhuma ação foi necessária.";

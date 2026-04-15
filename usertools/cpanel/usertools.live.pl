@@ -105,7 +105,7 @@ sub _do_kill_procs {
 
     return {
         success => \1,
-        message => 'Finalização agendada com sucesso. Seus processos PHP-FPM, cron jobs e conexões SSH serão encerrados em instantes. O cPanel reinicia automaticamente os serviços essenciais logo em seguida — se esta página travar, basta recarregar.',
+        message => 'Finalização agendada com sucesso. Seus processos PHP-FPM, cron jobs e conexões SSH serão encerrados em instantes. Se esta página travar, basta recarregar — as próximas requisições ao seu site iniciarão novos processos normalmente.',
     };
 }
 
@@ -446,6 +446,8 @@ sub _body_html {
         <i class="bi bi-power" aria-hidden="true"></i>
         Finalizar processos
       </button>
+      <!-- subtitulo visivel no modal -->
+
       <button id="ut-btn-fix" type="button" class="ut-btn ut-btn-primary">
         <i class="bi bi-wrench-adjustable" aria-hidden="true"></i>
         Corrigir permissões &amp; owner
@@ -552,7 +554,7 @@ sub _body_html {
   btnKill.addEventListener('click', function() {
     runAction('kill_procs', btnKill,
       'Isso irá encerrar TODOS os processos ativos da sua conta (PHP-FPM, cron em execução, sessões SSH e scripts em loop).<br><br>' +
-      'O site pode ficar indisponível por alguns segundos enquanto o cPanel reinicia os serviços essenciais.'
+      'As próximas requisições ao seu site iniciarão novos processos normalmente — o site pode responder mais lento na primeira visita após a finalização.'
     );
   });
   btnFix.addEventListener('click', function() {

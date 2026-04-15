@@ -223,7 +223,16 @@ done
 
 # --- Limpeza de cache + reload -----------------------------------------------
 echo "  - Limpando caches e recarregando cpsrvd"
-/usr/local/cpanel/scripts/rebuild_sprites 2>/dev/null || true
+# sprite_generator adiciona nosso SVG ao icon_spritemap.svg do Jupiter. Sem
+# isso o icone nao renderiza - o Jupiter NAO serve os SVGs individuais da
+# pasta application_icons/, usa um sprite CSS consolidado. O caminho
+# /scripts/rebuild_sprites (nome antigo) nao existe em versoes recentes.
+if [[ -x /usr/local/cpanel/bin/sprite_generator ]]; then
+    /usr/local/cpanel/bin/sprite_generator >/dev/null 2>&1 || true
+    echo "  - Spritemap de icones regenerado (incluindo ${PLUGIN_NAME}.svg)"
+elif [[ -x /usr/local/cpanel/scripts/rebuild_sprites ]]; then
+    /usr/local/cpanel/scripts/rebuild_sprites 2>/dev/null || true
+fi
 
 # Força recarga do Feature Manager, AppConfigs compiladas e do chrome do WHM/cPanel.
 # cpsrvd serve tanto WHM quanto cPanel; o restart é quase instantâneo.
