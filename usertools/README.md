@@ -38,16 +38,12 @@ usertools/
 No servidor cPanel/WHM, como `root`:
 
 ```bash
-git clone https://github.com/guigallina27/pluginscpanel.git /opt/pluginscpanel
+wget -qO- https://github.com/guigallina27/pluginscpanel/archive/refs/heads/main.tar.gz | tar -xz -C /opt/
+rm -rf /opt/pluginscpanel && mv /opt/pluginscpanel-main /opt/pluginscpanel
 bash /opt/pluginscpanel/usertools/install.sh
 ```
 
-Se o repositório já estiver clonado, basta:
-
-```bash
-cd /opt/pluginscpanel && git pull
-bash /opt/pluginscpanel/usertools/install.sh
-```
+Para atualizar, rode o mesmo bloco — ele baixa a versão mais recente, sobrescreve e reinstala.
 
 O instalador:
 - Copia os arquivos para os diretórios oficiais do cPanel
