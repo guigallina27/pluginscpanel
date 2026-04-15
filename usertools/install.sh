@@ -119,8 +119,15 @@ if [[ -d "${FEATURES_DIR}" ]]; then
         case "$(basename "$flist")" in
             *.lock|*.cache|*.swp) continue ;;
         esac
-        # Pula a lista 'disabled' (lista de features globalmente bloqueadas).
-        [[ "$(basename "$flist")" == "disabled" ]] && continue
+        # Na lista 'disabled' (features globalmente bloqueadas), a simples
+        # PRESENCA da chave 'usertools=' - mesmo com valor 0 - faz o cPanel
+        # marcar a feature como is_disabled=1 na UI (logica em
+        # /usr/local/cpanel/Cpanel/Features.pm: exists $disabled_list{$feature}).
+        # Portanto aqui removemos a linha ao inves de adicionar.
+        if [[ "$(basename "$flist")" == "disabled" ]]; then
+            sed -i "/^${PLUGIN_NAME}=/d" "$flist" 2>/dev/null || true
+            continue
+        fi
         if ! grep -q "^${PLUGIN_NAME}=" "$flist" 2>/dev/null; then
             echo "${PLUGIN_NAME}=1" >> "$flist"
         fi
@@ -141,15 +148,21 @@ if command -v whmapi1 >/dev/null 2>&1; then
             fname=$(basename "$flist")
             case "$fname" in
                 *.lock|*.cache|*.swp) continue ;;
-                # A featurelist 'disabled' eh a lista de features globalmente
-                # BLOQUEADAS. Habilitar aqui faz a UI mostrar a feature como
-                # 'Desabilitado' forcado e impede o admin de marca-la em
-                # outras listas. NUNCA setar usertools=1 aqui.
                 disabled) continue ;;
             esac
             whmapi1 update_featurelist "featurelist=${fname}" "${PLUGIN_NAME}=1" >/dev/null 2>&1 || true
         done < <(find "${FEATURES_DIR}" -maxdepth 1 -type f -print0)
     fi
+
+    # Garante que a feature NAO esta presente na lista 'disabled' (qualquer
+    # presenca, mesmo com valor 0, marca is_disabled=1 na UI do Feature Manager).
+    if [[ -f "${FEATURES_DIR}/disabled" ]]; then
+        sed -i "/^${PLUGIN_NAME}=/d" "${FEATURES_DIR}/disabled" 2>/dev/null || true
+    fi
+
+    # Limpa caches compilados de featurelist para forcar releitura.
+    rm -rf /var/cpanel/features.cache/* 2>/dev/null || true
+
     whmapi1 update_featurelist featurelist=default "${PLUGIN_NAME}=1" >/dev/null 2>&1 || true
     echo "  - Feature '${PLUGIN_NAME}' habilitada em todas as feature lists via whmapi1"
 fi
