@@ -192,29 +192,69 @@ sub do_fix_perms {
 
     # 1. Script oficial do cPanel — cobre /home/user, public_html,
     #    mail/, .ssh/, etc/, cgi-bin/, SUID/SGID indevidos, CageFS.
-    my $output = qx{/scripts/fixhomedirperms \Q$user\E 2>&1};
-    my $exit   = $? >> 8;
+    my ( $output, $exit ) = _run_fixhomedirperms($user);
+    my $ok = defined $exit && $exit == 0;
 
     # 2. Complemento — addon/subdomínios com docroot FORA de
     #    /home/user/public_html não são normalizados pelo script oficial.
     my $extra = _fix_extra_docroots($user);
 
     my $msg;
-    if ( $exit == 0 ) {
+    if ($ok) {
         $msg = "Owner e permissões corrigidos em /home/$user.";
         $msg .= " Docroots fora de public_html tratados: $extra." if $extra > 0;
     }
+    elsif ( !defined $exit ) {
+        $msg = "Não foi possível localizar /scripts/fixhomedirperms.";
+    }
     else {
-        $msg = "Falha no /scripts/fixhomedirperms (exit=$exit).";
+        $msg = "Falha em fixhomedirperms (exit=$exit).";
     }
 
     json_out(
         {
-            success => $exit == 0 ? \1 : \0,
+            success => $ok ? \1 : \0,
             message => $msg,
             output  => $output,
         }
     );
+}
+
+# Roda /scripts/fixhomedirperms com path absoluto e captura saída.
+# Retorna (stdout+stderr, exit_code) ou (msg, undef) se falhar ao invocar.
+sub _run_fixhomedirperms {
+    my ($user) = @_;
+
+    my @candidates = qw(
+        /scripts/fixhomedirperms
+        /usr/local/cpanel/scripts/fixhomedirperms
+    );
+
+    my $script;
+    for my $c (@candidates) {
+        if ( -x $c ) { $script = $c; last; }
+    }
+    return ( "Script não encontrado em " . join( ', ', @candidates ), undef )
+        unless $script;
+
+    # Abre pipe sem shell (lista de args). Evita problemas de PATH do CGI.
+    my $pid = open( my $fh, '-|' );
+    return ( "Falha no fork: $!", undef ) unless defined $pid;
+
+    if ( $pid == 0 ) {
+        # Filho — redireciona stderr pra stdout e executa
+        open STDERR, '>&', \*STDOUT;
+        exec( $script, $user ) or do {
+            print "exec falhou: $!\n";
+            exit 127;
+        };
+    }
+
+    # Pai lê o output
+    my $output = do { local $/; <$fh> };
+    close $fh;
+    my $exit = $? >> 8;
+    return ( $output, $exit );
 }
 
 # Ver explicação completa no bin/usertools — mesma rotina.

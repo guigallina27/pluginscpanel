@@ -67,8 +67,8 @@ sub FIX_PERMS {
 
     # 1. Script oficial do cPanel — cobre /home/user, public_html,
     #    mail/, .ssh/, etc/, cgi-bin/, SUID/SGID indevidos, CageFS.
-    qx{/scripts/fixhomedirperms \Q$user\E 2>&1};
-    my $exit = $? >> 8;
+    my ( undef, $exit ) = _run_fixhomedirperms($user);
+    $exit = -1 unless defined $exit;
 
     # 2. Complemento — addon/subdomínios com docroot FORA de
     #    /home/user/public_html não são normalizados pelo script oficial.
@@ -80,14 +80,46 @@ sub FIX_PERMS {
         $msg = "Owner e permissões corrigidos em /home/$user.";
         $msg .= " Docroots fora de public_html tratados: $extra." if $extra > 0;
     }
+    elsif ( $exit == -1 ) {
+        $msg = "Não foi possível localizar /scripts/fixhomedirperms.";
+    }
     else {
-        $msg = "Falha no /scripts/fixhomedirperms (código $exit).";
+        $msg = "Falha em fixhomedirperms (código $exit).";
     }
 
     return {
         success => $exit == 0 ? \1 : \0,
         message => $msg,
     };
+}
+
+# Roda /scripts/fixhomedirperms com path absoluto; retorna (output, exit).
+# exit=undef se não conseguir nem invocar (script não existe, fork falhou).
+sub _run_fixhomedirperms {
+    my ($user) = @_;
+
+    my @candidates = qw(
+        /scripts/fixhomedirperms
+        /usr/local/cpanel/scripts/fixhomedirperms
+    );
+    my $script;
+    for my $c (@candidates) {
+        if ( -x $c ) { $script = $c; last; }
+    }
+    return ( "Script não encontrado", undef ) unless $script;
+
+    my $pid = open( my $fh, '-|' );
+    return ( "Falha no fork: $!", undef ) unless defined $pid;
+
+    if ( $pid == 0 ) {
+        open STDERR, '>&', \*STDOUT;
+        exec( $script, $user ) or do { print "exec falhou: $!\n"; exit 127; };
+    }
+
+    my $output = do { local $/; <$fh> };
+    close $fh;
+    my $exit = $? >> 8;
+    return ( $output, $exit );
 }
 
 # ---------------------------------------------------------------------------

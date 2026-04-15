@@ -69,6 +69,34 @@ echo "  - Registrando AppConfig (WHM)"
 echo "  - Registrando AppConfig (cPanel)"
 /usr/local/cpanel/bin/register_appconfig "${SRC_DIR}/cpanel/usertools.conf"
 
+# --- Feature Manager ---------------------------------------------------------
+# Registra a feature no Feature Manager do WHM (aparece na UI) e habilita
+# por padrão na feature list "default" (usada pelos planos existentes).
+ADDON_FEATURES_DIR="/usr/local/cpanel/whostmgr/addonfeatures"
+if [[ -d "${ADDON_FEATURES_DIR}" ]]; then
+    install -o root -g root -m 0644 /dev/null "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
+    echo "  - Feature '${PLUGIN_NAME}' registrada no Feature Manager"
+fi
+
+# Habilita a feature em todas as feature lists existentes — assim os planos
+# que usam essas lists passam a enxergar o ícone no cPanel imediatamente.
+FEATURES_DIR="/var/cpanel/features"
+if [[ -d "${FEATURES_DIR}" ]]; then
+    shopt -s nullglob
+    for flist in "${FEATURES_DIR}"/*; do
+        [[ -f "$flist" ]] || continue
+        # Skip arquivos não-feature (locking, caches)
+        case "$(basename "$flist")" in
+            *.lock|*.cache|*.swp) continue ;;
+        esac
+        if ! grep -q "^${PLUGIN_NAME}=" "$flist" 2>/dev/null; then
+            echo "${PLUGIN_NAME}=1" >> "$flist"
+        fi
+    done
+    shopt -u nullglob
+    echo "  - Feature habilitada em todas as feature lists"
+fi
+
 # --- Limpeza de cache --------------------------------------------------------
 echo "  - Limpando caches"
 /usr/local/cpanel/scripts/rebuild_sprites 2>/dev/null || true
