@@ -61,6 +61,32 @@ install -o root -g root -m 0755 \
     "${SRC_DIR}/cpanel/usertools.live.pl" \
     "${CPANEL_FRONTEND_DIR}/usertools.live.pl"
 
+# --- dynamicui (renderiza o icone no cPanel Jupiter) ------------------------
+# O register_appconfig sozinho NAO cria esse arquivo - sem ele, a feature
+# existe mas nenhum icone aparece na UI do usuario. Cada plugin precisa do
+# seu dynamicui_<name>.conf em /base/frontend/jupiter/dynamicui/.
+DYNAMICUI_DIR="/usr/local/cpanel/base/frontend/jupiter/dynamicui"
+DYNAMICUI_CONF="${DYNAMICUI_DIR}/dynamicui_${PLUGIN_NAME}.conf"
+if [[ -d "${DYNAMICUI_DIR}" ]]; then
+    echo "  - dynamicui em ${DYNAMICUI_CONF}"
+    cat > "${DYNAMICUI_CONF}" <<'DYNEOF'
+description=>Ferramentas do Usuario,feature=>usertools,file=>usertools,group=>software,height=>48,imgtype=>icon,itemdesc=>Ferramentas do Usuario,itemorder=>999,subtype=>img,target=>_self,type=>image,url=>3rdparty/usertools/usertools.live.pl,width=>48
+DYNEOF
+    chown root:root "${DYNAMICUI_CONF}"
+    chmod 0644 "${DYNAMICUI_CONF}"
+fi
+
+# Icone SVG do plugin (decodificado do icon_base64 do AppConfig).
+ICON_DEST="${CPANEL_FRONTEND_DIR}/${PLUGIN_NAME}.svg"
+if grep -q "^icon_base64=" "${SRC_DIR}/cpanel/usertools.conf" 2>/dev/null; then
+    grep "^icon_base64=" "${SRC_DIR}/cpanel/usertools.conf" \
+        | sed "s/^icon_base64=//" \
+        | base64 -d > "${ICON_DEST}" 2>/dev/null || true
+    chown root:root "${ICON_DEST}" 2>/dev/null || true
+    chmod 0644 "${ICON_DEST}" 2>/dev/null || true
+    echo "  - Icone SVG em ${ICON_DEST}"
+fi
+
 # --- AdminBin ----------------------------------------------------------------
 echo "  - AdminBin em ${ADMINBIN_DIR}/${PLUGIN_NAME}"
 install -o root -g root -m 0700 \
