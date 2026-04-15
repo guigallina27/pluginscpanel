@@ -80,9 +80,14 @@ sub json_out {
 
 sub api_list_users {
     my @users = eval { _list_cpanel_accounts() };
-    if ( my $err = $@ ) {
-        $err =~ s/\s+$//;
-        json_out( { success => \0, message => "Erro ao listar: $err" } );
+    if ($@) {
+        # Detalhes tecnicos ficam no log; usuario ve mensagem generica.
+        my $err = $@; $err =~ s/\s+$//;
+        warn "[usertools] list_users failed: $err\n";
+        json_out( {
+            success => \0,
+            message => 'Não foi possível carregar a lista de contas neste momento. Recarregue a página em alguns segundos.',
+        } );
         return;
     }
     json_out( { success => \1, users => \@users } );
@@ -95,24 +100,27 @@ sub api_run_action {
 
     # Sanitiza — apenas [a-z0-9_-], máx 32 caracteres
     if ( $target !~ /^[a-z0-9_\-]{1,32}$/ ) {
-        json_out( { success => \0, message => 'Nome de usuário inválido.' } );
+        json_out( {
+            success => \0,
+            message => 'Nome de usuário em formato inválido. Selecione uma conta válida na lista e tente novamente.',
+        } );
         return;
     }
 
     if ( !Cpanel::AcctUtils::Account::accountexists($target) ) {
-        json_out( { success => \0, message => "Usuário '$target' não encontrado." } );
+        json_out( {
+            success => \0,
+            message => "A conta \"$target\" não existe ou foi removida. Atualize a lista de contas e escolha novamente.",
+        } );
         return;
     }
 
     # Revendedor só atua em clientes dele
     if ( !$is_root && !_is_reseller_owner( $reseller, $target ) ) {
-        json_out(
-            {
-                success => \0,
-                message =>
-                    "Você não tem permissão para agir sobre '$target'.",
-            }
-        );
+        json_out( {
+            success => \0,
+            message => "Acesso negado. A conta \"$target\" não pertence à sua carteira de revendedor — você só pode executar ações em contas sob o seu gerenciamento.",
+        } );
         return;
     }
 
@@ -121,9 +129,12 @@ sub api_run_action {
         else                        { do_fix_perms($target); }
         1;
     } or do {
-        my $err = $@ || 'erro desconhecido';
-        $err =~ s/\s+$//;
-        json_out( { success => \0, message => "Falha na execução: $err" } );
+        my $err = $@ || 'erro desconhecido'; $err =~ s/\s+$//;
+        warn "[usertools] $act on $target failed: $err\n";
+        json_out( {
+            success => \0,
+            message => 'A operação não pôde ser concluída devido a um erro interno. Verifique /usr/local/cpanel/logs/error_log para detalhes técnicos.',
+        } );
     };
 }
 
@@ -202,18 +213,19 @@ sub do_kill_procs {
     $killed = 0 if $killed < 0;
 
     my $msg;
+    my $ok = \1;
     if ( $killed > 0 ) {
-        my $plural = $killed == 1 ? 'processo' : 'processos';
-        $msg = "$killed $plural do usuario '$user' encerrados com sucesso (restavam $before ativos, agora $after).";
+        my $plural = $killed == 1 ? 'processo foi encerrado' : 'processos foram encerrados';
+        $msg = "Finalização concluída: $killed $plural da conta \"$user\" (de $before ativos antes da operação restam $after). Os serviços essenciais serão reiniciados automaticamente pelo cPanel.";
     }
     elsif ( $before eq '0' ) {
-        $msg = "Nenhum processo ativo encontrado para '$user'. A conta ja estava ociosa.";
+        $msg = "A conta \"$user\" já estava ociosa — nenhum processo ativo foi encontrado. Nenhuma ação foi necessária.";
     }
     else {
-        $msg = "Comando enviado - $before processo(s) detectado(s), $after ainda ativo(s) apos a finalizacao. Alguns podem ter sido reiniciados automaticamente pelo sistema.";
+        $msg = "Comando de finalização enviado, porém $after processo(s) continuam ativos (de $before detectados). Isso é normal: alguns processos são reiniciados imediatamente pelo sistema (PHP-FPM pool, cron). Aguarde um minuto e verifique novamente se o problema persiste.";
     }
 
-    json_out( { success => \1, message => $msg } );
+    json_out( { success => $ok, message => $msg } );
 }
 
 sub do_fix_perms {
@@ -221,13 +233,19 @@ sub do_fix_perms {
 
     my @pw = getpwnam($user);
     if (!@pw) {
-        json_out({ success => \0, message => "Usuário '$user' não encontrado." });
+        json_out({
+            success => \0,
+            message => "A conta \"$user\" não foi localizada na base do sistema. Ela pode ter sido removida recentemente — atualize a lista de contas.",
+        });
         return;
     }
-    
+
     my $home = $pw[7];
     if (!defined $home || !-d $home || $home eq '/' || $home eq '/root') {
-        json_out({ success => \0, message => "Home do usuário inválido ou protegido contra modificações." });
+        json_out({
+            success => \0,
+            message => "O diretório pessoal da conta \"$user\" está indisponível ou aponta para um caminho protegido. A operação foi bloqueada por segurança.",
+        });
         return;
     }
 
@@ -292,10 +310,18 @@ sub do_fix_perms {
         $count++;
     }
 
-    my $plural = $count == 1 ? 'diretorio' : 'diretorios';
+    if ( $count == 0 ) {
+        json_out({
+            success => \0,
+            message => "A conta \"$user\" não possui nenhum site ativo. Para reparar permissões é preciso ter ao menos um domínio com pasta pública configurada (public_html ou domínio adicional).",
+        });
+        return;
+    }
+
+    my $plural = $count == 1 ? 'site' : 'sites';
     json_out({
         success => \1,
-        message => "Permissoes restauradas em $count $plural da conta '$user'. Pastas 755, arquivos 644, scripts .cgi/.pl 755, dono restabelecido para o proprio usuario.",
+        message => "Permissões normalizadas em $count $plural da conta \"$user\". Pastas em 755, arquivos em 644, scripts .cgi/.pl em 755 e proprietário restabelecido para o próprio usuário. Se o problema que motivou esta ação persistir, aguarde alguns minutos para o servidor web reprocessar os arquivos.",
     });
 }
 sub render_ui {

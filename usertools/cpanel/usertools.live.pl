@@ -13,6 +13,7 @@
 
 use strict;
 use warnings;
+use utf8;
 
 use Cpanel::LiveAPI ();
 use CGI             ();
@@ -26,7 +27,10 @@ my $user   = $ENV{'REMOTE_USER'} || '';
 
 # Sanitiza nome de usuario (untaint) - usado em comandos externos.
 if ( $user !~ /^([a-z0-9_\-]{1,32})$/ ) {
-    _json_response( $cpanel, { success => \0, message => 'Sessao invalida.' } );
+    _json_response( $cpanel, {
+        success => \0,
+        message => 'Sua sessão expirou ou é inválida. Faça logout e entre no cPanel novamente para continuar.',
+    } );
     exit 0;
 }
 $user = $1;
@@ -72,8 +76,10 @@ sub _do_kill_procs {
     # Fork: o pkill precisa ocorrer fora do processo atual porque a propria
     # requisicao roda sob o mesmo UID e seria encerrada junto.
     my $pid = fork();
-    return { success => \0, message => 'Nao foi possivel iniciar a operacao no servidor. Tente novamente em instantes.' }
-        if !defined $pid;
+    return {
+        success => \0,
+        message => 'Não foi possível agendar a finalização dos processos. O servidor pode estar sobrecarregado — aguarde alguns segundos e tente de novo.',
+    } if !defined $pid;
 
     if ( $pid == 0 ) {
         close STDIN;
@@ -89,7 +95,7 @@ sub _do_kill_procs {
 
     return {
         success => \1,
-        message => 'Comando de finalizacao enviado. Seus processos ativos serao encerrados em alguns segundos. Se a pagina travar, basta recarregar - sua sessao sera restabelecida automaticamente.',
+        message => 'Finalização agendada com sucesso. Seus processos PHP-FPM, cron jobs e conexões SSH serão encerrados em instantes. O cPanel reinicia automaticamente os serviços essenciais logo em seguida — se esta página travar, basta recarregar.',
     };
 }
 
@@ -97,15 +103,19 @@ sub _do_fix_perms {
     my ($user) = @_;
 
     my @pw = getpwnam($user);
-    return { success => \0, message => 'Conta de usuario nao localizada no sistema.' }
-        if !@pw;
+    return {
+        success => \0,
+        message => 'Sua conta cPanel não foi localizada no sistema. Entre em contato com o suporte para verificar a integridade do seu acesso.',
+    } if !@pw;
 
     my $user_uid = $pw[2];
     my $user_gid = $pw[3];
     my $home     = $pw[7];
 
-    return { success => \0, message => 'Diretorio home invalido.' }
-        if !defined $home || !-d $home || $home eq '/' || $home eq '/root';
+    return {
+        success => \0,
+        message => 'O diretório pessoal (home) da sua conta está indisponível ou protegido. A operação foi bloqueada por segurança — contate o suporte para investigação.',
+    } if !defined $home || !-d $home || $home eq '/' || $home eq '/root';
 
     # Ajuste do home (711 - permite o Apache servir o user sem listar).
     chmod 0711, $home;
@@ -158,13 +168,13 @@ sub _do_fix_perms {
     if ( $count == 0 ) {
         return {
             success => \0,
-            message => 'Nenhum diretorio publico foi encontrado na sua conta. Verifique se voce possui ao menos um dominio configurado.',
+            message => 'Nenhum site ativo foi encontrado na sua conta. Para reparar permissões você precisa ter ao menos um domínio com pasta pública configurada (public_html ou domínio adicional).',
         };
     }
 
-    my $plural = $count == 1 ? 'diretorio' : 'diretorios';
-    my $msg = "Permissoes restauradas com sucesso em $count $plural. Pastas agora com modo 755, arquivos com 644, scripts .cgi/.pl com 755 e dono restabelecido para $user.";
-    $msg .= " (Alguns arquivos protegidos nao puderam ser alterados - isso e esperado em contas com integracao especial.)" if $errors;
+    my $plural = $count == 1 ? 'site' : 'sites';
+    my $msg = "Permissões normalizadas com sucesso em $count $plural da sua conta. Pastas agora em 755, arquivos em 644, scripts .cgi/.pl em 755 e proprietário restabelecido para \"$user\". Se o problema que motivou esta ação persistir, aguarde alguns minutos para o Apache/LSWS reprocessar os arquivos.";
+    $msg .= " Alguns arquivos protegidos do sistema não foram alterados — isso é esperado e não compromete o resultado." if $errors;
 
     return { success => \1, message => $msg };
 }
@@ -512,12 +522,16 @@ sub _body_html {
           var d;
           try { d = JSON.parse(text); }
           catch (e) {
-            showResult(false, 'Resposta inválida do servidor: ' + e.message);
+            showResult(false, 'O servidor retornou uma resposta inesperada. Recarregue a página e tente novamente; se persistir, contate o suporte.');
             return;
           }
-          showResult(!!d.success, d.message || (d.success ? 'Operação concluída.' : 'Não foi possível concluir a operação.'));
+          showResult(!!d.success, d.message || (d.success
+            ? 'Ação concluída com sucesso.'
+            : 'A operação não pôde ser concluída. Tente novamente em alguns instantes.'));
         })
-        .catch(function(e) { showResult(false, 'Falha na comunicação: ' + e.message); })
+        .catch(function(e) {
+          showResult(false, 'Falha de comunicação com o servidor. Verifique sua conexão e tente novamente.');
+        })
         .then(function() {
           btn.innerHTML = originalHTML;
           btnKill.disabled = false; btnFix.disabled = false;

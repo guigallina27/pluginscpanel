@@ -521,7 +521,7 @@
     return fetch(url, init).then(function(r) {
       var ct = r.headers.get('content-type') || '';
       if (!ct.includes('application/json')) {
-        throw new Error('Resposta não-JSON (status ' + r.status + '). Confira /usr/local/cpanel/logs/error_log.');
+        throw new Error('O servidor retornou uma resposta inesperada (HTTP ' + r.status + '). Consulte /usr/local/cpanel/logs/error_log para detalhes técnicos.');
       }
       return r.json();
     });
@@ -691,9 +691,11 @@
       form.append('user', chosenUser);
 
       jsonFetch(URL_SELF, { method: 'POST', body: form }).then(function(d) {
-        showResult(!!d.success, d.message || (d.success ? 'Concluído.' : 'Falhou.'));
+        showResult(!!d.success, d.message || (d.success
+          ? 'Ação concluída com sucesso.'
+          : 'A operação não pôde ser concluída. Tente novamente em alguns instantes.'));
       }).catch(function(e) {
-        showResult(false, e.message || String(e));
+        showResult(false, e.message || 'Falha de comunicação com o servidor. Verifique sua conexão e tente novamente.');
       }).then(function() {
         btn.innerHTML = originalHTML;
         btnKill.disabled = false; btnFix.disabled = false;
@@ -718,22 +720,24 @@
 
   jsonFetch(URL_SELF + '?action=list_users').then(function(d) {
     if (!d.success) {
-      input.placeholder = 'Erro ao carregar';
-      hint.textContent = 'Falha ao carregar';
-      showResult(false, d.message || 'Falha ao listar usuários.');
+      input.placeholder = 'Não foi possível carregar';
+      hint.textContent = 'Lista indisponível';
+      showResult(false, d.message || 'Não foi possível carregar a lista de contas neste momento. Recarregue a página em alguns segundos.');
       return;
     }
     accounts = d.users || [];
     input.disabled = false;
     input.placeholder = accounts.length
       ? 'Buscar por usuário ou domínio...'
-      : 'Nenhuma conta disponível';
+      : 'Nenhuma conta disponível sob sua gestão';
     filtered = accounts.slice();
-    hint.textContent = accounts.length + ' conta' + (accounts.length === 1 ? '' : 's') + ' disponíve' + (accounts.length === 1 ? 'l' : 'is');
+    hint.textContent = accounts.length
+      ? accounts.length + (accounts.length === 1 ? ' conta disponível' : ' contas disponíveis')
+      : 'Sem contas sob gestão';
   }).catch(function(e) {
-    input.placeholder = 'Erro ao carregar';
-    hint.textContent = 'Falha ao carregar';
-    showResult(false, e.message || String(e));
+    input.placeholder = 'Não foi possível carregar';
+    hint.textContent = 'Lista indisponível';
+    showResult(false, e.message || 'Falha de comunicação com o servidor. Verifique sua conexão e tente novamente.');
   });
 })();
 </script>
