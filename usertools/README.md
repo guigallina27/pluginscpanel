@@ -36,25 +36,25 @@ usertools/
 
 ## Instalação
 
-Como `root` no servidor cPanel/WHM:
+Como `root` no servidor cPanel/WHM — método recomendado (sempre instalação limpa, dispensa `git`):
+
+```bash
+cd /root
+rm -rf pluginscpanel pluginscpanel-main
+wget -qO- https://github.com/guigallina27/pluginscpanel/archive/refs/heads/main.tar.gz | tar -xz
+mv pluginscpanel-main pluginscpanel
+bash /root/pluginscpanel/usertools/install.sh
+```
+
+Alternativa via `git` (útil em dev para atualizar com `git pull`):
 
 ```bash
 cd /root
 git clone https://github.com/guigallina27/pluginscpanel.git
-cd pluginscpanel/usertools
-bash install.sh
+bash /root/pluginscpanel/usertools/install.sh
 ```
 
-Para **atualizar** depois:
-
-```bash
-cd /root/pluginscpanel
-git pull
-cd usertools
-bash install.sh
-```
-
-A instalação é idempotente — rodar de novo apenas sobrescreve arquivos e reregistra os AppConfigs.
+A instalação é idempotente — rodar de novo sobrescreve arquivos e reregistra os AppConfigs.
 
 ### O que o `install.sh` faz
 

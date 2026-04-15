@@ -19,6 +19,14 @@ use Cpanel::LiveAPI ();
 use CGI             ();
 use POSIX           ();
 
+use Encode ();
+
+# O 'use utf8' marca apenas o SOURCE como UTF-8 - o STDOUT continua em
+# modo raw. Sem encoding manual, acentos do source viram "?" no browser.
+# NAO usamos binmode ':utf8' no STDOUT porque o JSON::XS ja retorna bytes
+# UTF-8 (->utf8) e isso geraria dupla codificacao. Ao inves disso, o HTML
+# heredoc passa por Encode::encode_utf8 antes de ir para STDOUT.
+
 my $cpanel = Cpanel::LiveAPI->new();
 
 my $cgi    = CGI->new;
@@ -49,8 +57,10 @@ print "Content-type: text/html; charset=utf-8\r\n\r\n";
 # O 2o argumento (app_key) eh obrigatorio para o cPanel resolver
 # breadcrumbs e o link 'Home'. Sem isso, ao sair da pagina o cPanel
 # cai em 404 porque nao sabe de qual app esta voltando.
-print $cpanel->header( 'Ferramentas do Usuário', 'usertools' );
-print _body_html($user);
+# Encode::encode_utf8 converte a string decodada (pela 'use utf8') de volta
+# para bytes UTF-8 que o browser renderiza corretamente.
+print $cpanel->header( Encode::encode_utf8('Ferramentas do Usuário'), 'usertools' );
+print Encode::encode_utf8( _body_html($user) );
 print $cpanel->footer();
 $cpanel->end();
 exit 0;
