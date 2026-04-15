@@ -1,0 +1,14 @@
+{
+  "id": "usertools",
+  "name": "Ferramentas do Usuário",
+  "description": "Ações de Manutenção e Gestão de Permissões",
+  "type": "cpanel",
+  "group": "advanced",
+  "features": [
+      {
+          "id": "usertools",
+          "name": "Ferramentas do Usuário"
+      }
+  ],
+  "uri": "3rdparty/usertools/usertools.live.pl"
+}

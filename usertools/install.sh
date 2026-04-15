@@ -29,7 +29,7 @@ echo "==> Inicializando a instalação de ${PLUGIN_NAME}..."
 
 # Sanitize - Finais de linha do Windows corrompem o parser/AppConfig do cPanel
 echo "  - Normalizando quebras de linha Windows (CRLF -> LF)..."
-for f in "${SRC_DIR}/whm/usertools.conf" "${SRC_DIR}/cpanel/usertools.conf" "${SRC_DIR}/bin/usertools.conf" "${SRC_DIR}/whm/addon_usertools.cgi" "${SRC_DIR}/cpanel/usertools.live.pl" "${SRC_DIR}/bin/usertools"; do
+for f in "${SRC_DIR}/whm/usertools.conf" "${SRC_DIR}/bin/usertools.conf" "${SRC_DIR}/whm/addon_usertools.cgi" "${SRC_DIR}/cpanel/usertools.live.pl" "${SRC_DIR}/bin/usertools"; do
     if [[ -f "$f" ]]; then
         perl -pi -e 's/\r//g' "$f" 2>/dev/null || true
     fi
@@ -71,27 +71,17 @@ install -o root -g root -m 0644 \
     "${ADMINBIN_DIR}/${PLUGIN_NAME}.conf"
 
 # --- AppConfig registro ------------------------------------------------------
-echo "  - Removendo registros antigos de AppConfig (limpeza)..."
+echo "  - Removendo registros antigos de AppConfig e Plugin (limpeza)..."
 /usr/local/cpanel/bin/unregister_appconfig usertools >/dev/null 2>&1 || true
 /usr/local/cpanel/bin/unregister_appconfig whm_usertools >/dev/null 2>&1 || true
+/usr/local/cpanel/scripts/uninstall_plugin "${SRC_DIR}/cpanel" --theme jupiter >/dev/null 2>&1 || true
 
 echo "  - Registrando AppConfig (WHM)"
 /usr/local/cpanel/bin/register_appconfig "${SRC_DIR}/whm/usertools.conf"
 
-echo "  - Registrando AppConfig (cPanel)"
-/usr/local/cpanel/bin/register_appconfig "${SRC_DIR}/cpanel/usertools.conf"
-
-# --- Feature Manager ---------------------------------------------------------
-# Registra a feature no Feature Manager do WHM (aparece na UI) e habilita
-# por padrão nas feature lists existentes (usadas pelos planos).
-ADDON_FEATURES_DIR="/usr/local/cpanel/whostmgr/addonfeatures"
-if [[ -d "${ADDON_FEATURES_DIR}" ]]; then
-    # O arquivo contém o displayname mostrado no Feature Manager
-    echo "Ferramentas do Usuário" > "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
-    chown root:root "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
-    chmod 0644 "${ADDON_FEATURES_DIR}/${PLUGIN_NAME}"
-    echo "  - Feature '${PLUGIN_NAME}' registrada no Feature Manager"
-fi
+# --- Integracao Visual e Features (cPanel Jupiter Theme) ----------------------
+echo "  - Registrando API Plugin (cPanel & Feature Manager)"
+/usr/local/cpanel/scripts/install_plugin "${SRC_DIR}/cpanel" --theme jupiter
 
 # Habilita a feature em todas as feature lists existentes — assim os planos
 # que usam essas lists passam a enxergar o ícone no cPanel imediatamente.
@@ -108,7 +98,7 @@ if [[ -d "${FEATURES_DIR}" ]]; then
         fi
     done
     shopt -u nullglob
-    echo "  - Feature habilitada em todas as feature lists"
+    echo "  - Feature 'usertools' confirmada ativa em todas as listas de planos"
 fi
 
 # --- Limpeza de cache + reload -----------------------------------------------
