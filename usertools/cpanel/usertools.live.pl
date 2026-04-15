@@ -69,7 +69,7 @@ sub render_ui {
     # URL absoluta do próprio script, para o JS não depender de URL relativa
     # (que pode falhar dentro do wrapper do cPanel).
     my $self_url = $ENV{'SCRIPT_NAME'}
-        // '/frontend/jupiter/usertools/usertools.live.pl';
+        // '/frontend/jupiter/3rdparty/usertools/usertools.live.pl';
     $self_url =~ s/[<>'"&]//g;
 
     print "Content-type: text/html; charset=utf-8\r\n\r\n";
