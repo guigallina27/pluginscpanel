@@ -76,9 +76,12 @@ DYNEOF
     chmod 0644 "${DYNAMICUI_CONF}"
 fi
 
-# Icone SVG do plugin (decodificado do icon_base64 do AppConfig).
-ICON_DEST="${CPANEL_FRONTEND_DIR}/${PLUGIN_NAME}.svg"
-if grep -q "^icon_base64=" "${SRC_DIR}/cpanel/usertools.conf" 2>/dev/null; then
+# Icone SVG do plugin. IMPORTANTE: o Jupiter resolve 'file=>usertools' do
+# dynamicui buscando em /assets/application_icons/<name>.svg, NAO no diretorio
+# do plugin em /3rdparty/. Colocar o SVG no lugar errado deixa o icone em branco.
+ICON_DIR="/usr/local/cpanel/base/frontend/jupiter/assets/application_icons"
+ICON_DEST="${ICON_DIR}/${PLUGIN_NAME}.svg"
+if [[ -d "${ICON_DIR}" ]] && grep -q "^icon_base64=" "${SRC_DIR}/cpanel/usertools.conf" 2>/dev/null; then
     grep "^icon_base64=" "${SRC_DIR}/cpanel/usertools.conf" \
         | sed "s/^icon_base64=//" \
         | base64 -d > "${ICON_DEST}" 2>/dev/null || true
