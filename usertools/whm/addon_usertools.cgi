@@ -153,18 +153,89 @@ sub do_kill_procs {
 sub do_fix_perms {
     my ($user) = @_;
 
+    # 1. Script oficial do cPanel — cobre /home/user, public_html,
+    #    mail/, .ssh/, etc/, cgi-bin/, SUID/SGID indevidos, CageFS.
     my $output = qx{/scripts/fixhomedirperms \Q$user\E 2>&1};
     my $exit   = $? >> 8;
+
+    # 2. Complemento — addon/subdomínios com docroot FORA de
+    #    /home/user/public_html não são normalizados pelo script oficial.
+    my $extra = _fix_extra_docroots($user);
+
+    my $msg;
+    if ( $exit == 0 ) {
+        $msg = "Owner e permissões corrigidos em /home/$user.";
+        $msg .= " Docroots fora de public_html tratados: $extra." if $extra > 0;
+    }
+    else {
+        $msg = "Falha no /scripts/fixhomedirperms (exit=$exit).";
+    }
 
     json_out(
         {
             success => $exit == 0 ? \1 : \0,
-            message => $exit == 0
-                ? "Owner e permissões corrigidos em /home/$user."
-                : "Falha ao corrigir (exit=$exit).",
-            output => $output,
+            message => $msg,
+            output  => $output,
         }
     );
+}
+
+# Ver explicação completa no bin/usertools — mesma rotina.
+sub _fix_extra_docroots {
+    my ($user) = @_;
+
+    my @pw = getpwnam($user);
+    return 0 unless @pw;
+    my $home = $pw[7];
+    return 0 unless defined $home && -d $home;
+
+    my $public_html  = "$home/public_html";
+    my $userdata_dir = "/var/cpanel/userdata/$user";
+    return 0 unless -d $userdata_dir;
+
+    opendir( my $dh, $userdata_dir ) or return 0;
+    my @files;
+    while ( my $entry = readdir $dh ) {
+        next if $entry =~ /^\./;
+        next if $entry =~ /\.cache$/;
+        next if $entry =~ /_SSL$/;
+        next if $entry eq 'main';
+        my $path = "$userdata_dir/$entry";
+        push @files, $path if -f $path;
+    }
+    closedir $dh;
+
+    my ( %seen, @docroots );
+    for my $file (@files) {
+        open( my $fh, '<', $file ) or next;
+        while ( my $line = <$fh> ) {
+            next unless $line =~ /^\s*documentroot\s*:\s*(.+?)\s*$/;
+            my $dr = $1;
+            $dr =~ s/^["']|["']$//g;
+            next if $dr eq $public_html;
+            next if $dr =~ m{^\Q$public_html\E/};
+            next unless $dr =~ m{^\Q$home\E/};
+            next if $seen{$dr}++;
+            push @docroots, $dr if -d $dr;
+        }
+        close $fh;
+    }
+
+    my $count = 0;
+    for my $dr (@docroots) {
+        system( '/bin/chown', '-R', "$user:$user", $dr );
+        system( '/usr/bin/find', $dr, '-type', 'd',
+            '-exec', '/bin/chmod', '755', '{}', '+' );
+        system( '/usr/bin/find', $dr, '-type', 'f',
+            '-exec', '/bin/chmod', '644', '{}', '+' );
+        system( '/usr/bin/find', $dr, '-type', 'f',
+            '(', '-name', '*.cgi', '-o', '-name', '*.pl', ')',
+            '-exec', '/bin/chmod', '755', '{}', '+' );
+        system( '/bin/chmod', '755', $dr );
+        $count++;
+    }
+
+    return $count;
 }
 
 sub render_ui {

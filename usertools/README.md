@@ -3,7 +3,7 @@
 Plugin que oferece duas ações rápidas de manutenção por usuário do cPanel:
 
 1. **Finalizar Processos** — executa `pkill -9 -u <usuário>` encerrando todos os processos daquele usuário.
-2. **Corrigir Permissões & Owner** — executa `/scripts/fixhomedirperms <usuário>`, script nativo do cPanel que restaura owner/grupo e permissões padrão do diretório home.
+2. **Corrigir Permissões & Owner** — executa `/scripts/fixhomedirperms <usuário>` (script nativo do cPanel que restaura owner/grupo e permissões padrão do home inteiro: `/home/user`, `public_html`, `mail/`, `.ssh/`, `etc/`, `cgi-bin/` e remove SUID/SGID indevidos) e em seguida aplica um complemento para **addon/subdomínios com documentroot FORA de `public_html`** (lidos em `/var/cpanel/userdata/<user>/*`), ajustando owner/grupo e permissões padrão também neles.
 
 ## Quem enxerga e quem executa
 
