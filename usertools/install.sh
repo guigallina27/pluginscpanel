@@ -25,7 +25,15 @@ if [[ ! -d /usr/local/cpanel ]]; then
     exit 1
 fi
 
-echo "==> Instalando ${PLUGIN_NAME}..."
+echo "==> Inicializando a instalação de ${PLUGIN_NAME}..."
+
+# Sanitize - Finais de linha do Windows corrompem o parser/AppConfig do cPanel
+echo "  - Normalizando quebras de linha Windows (CRLF -> LF)..."
+for f in "${SRC_DIR}/whm/usertools.conf" "${SRC_DIR}/cpanel/usertools.conf" "${SRC_DIR}/bin/usertools.conf" "${SRC_DIR}/whm/addon_usertools.cgi" "${SRC_DIR}/cpanel/usertools.live.pl" "${SRC_DIR}/bin/usertools"; do
+    if [[ -f "$f" ]]; then
+        perl -pi -e 's/\r//g' "$f" 2>/dev/null || true
+    fi
+done
 
 # --- WHM (addon) -------------------------------------------------------------
 echo "  - WHM addon em ${WHM_ADDON_DIR}"
