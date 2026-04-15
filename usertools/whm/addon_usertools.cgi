@@ -3,10 +3,11 @@
 # UserTools — interface WHM (root + revendedores)
 #
 # - Root: pode atuar em qualquer conta cPanel do servidor.
-# - Revendedor: apenas em contas que ele possui (checkowner).
+# - Revendedor: apenas em contas cuja propriedade (OWNER em
+#   /var/cpanel/users/<alvo>) seja igual ao seu REMOTE_USER.
 #
-# Executado pelo daemon whostmgr (contexto privilegiado), por isso pode
-# rodar pkill e /scripts/fixhomedirperms diretamente.
+# Executado pelo daemon whostmgr (contexto root), por isso pode aplicar
+# pkill -9 em qualquer UID alvo e chown/chmod em qualquer diretorio.
 
 BEGIN {
     unshift @INC, '/usr/local/cpanel';
