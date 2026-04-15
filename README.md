@@ -8,30 +8,37 @@ Coleção de plugins próprios para cPanel/WHM.
 
 ## Instalação
 
-No servidor cPanel/WHM, como `root`:
+Logue como `root` no servidor cPanel/WHM e rode:
 
 ```bash
-wget -qO- https://github.com/guigallina27/pluginscpanel/archive/refs/heads/main.tar.gz | tar -xz -C /opt/
-rm -rf /opt/pluginscpanel && mv /opt/pluginscpanel-main /opt/pluginscpanel
-bash /opt/pluginscpanel/usertools/install.sh
+cd /root
+rm -rf pluginscpanel pluginscpanel-main
+wget -qO- https://github.com/guigallina27/pluginscpanel/archive/refs/heads/main.tar.gz | tar -xz
+mv pluginscpanel-main pluginscpanel
+bash /root/pluginscpanel/usertools/install.sh
 ```
 
-Rode `install.sh` de cada plugin que quiser ativar.
+O `install.sh` faz **todo o trabalho** — você não precisa executar mais nada depois dele:
 
-## Atualização
+1. Copia o CGI do WHM para `/usr/local/cpanel/whostmgr/docroot/cgi/addons/usertools/` (owner `root`, modo `0755`).
+2. Copia o `.live.pl` do cPanel para `/usr/local/cpanel/base/frontend/jupiter/usertools/` (owner `cpanel`).
+3. Instala o AdminBin em `/usr/local/cpanel/bin/admin/Cpanel/usertools` (modo `0700`, só root).
+4. Registra os dois AppConfigs via `/usr/local/cpanel/bin/register_appconfig` (WHM + cPanel).
+5. Limpa o cache de sprites de ícones.
 
-Mesmo comando da instalação — ele baixa a versão mais nova, sobrescreve e reinstala:
+Para reinstalar/atualizar, rode o mesmo bloco — ele baixa a versão atual do `main`, sobrescreve os arquivos e refaz os registros.
 
-```bash
-wget -qO- https://github.com/guigallina27/pluginscpanel/archive/refs/heads/main.tar.gz | tar -xz -C /opt/
-rm -rf /opt/pluginscpanel && mv /opt/pluginscpanel-main /opt/pluginscpanel
-bash /opt/pluginscpanel/usertools/install.sh
-```
+## Pós-instalação
+
+Apenas uma ação manual no WHM para liberar a feature nos clientes:
+
+- **WHM → Home → Feature Manager** → adicione `usertools` aos planos que devem enxergar o ícone no cPanel.
+- **WHM → Plugins → Ferramentas do Usuário** já aparece para root e revendedores sem mais nada.
 
 ## Desinstalação
 
 ```bash
-bash /opt/pluginscpanel/usertools/uninstall.sh
+bash /root/pluginscpanel/usertools/uninstall.sh
 ```
 
 Detalhes específicos no README de cada plugin.

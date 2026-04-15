@@ -35,32 +35,43 @@ usertools/
 
 ## Instalação
 
-No servidor cPanel/WHM, como `root`:
+Logue como `root` no servidor cPanel/WHM e rode:
 
 ```bash
-wget -qO- https://github.com/guigallina27/pluginscpanel/archive/refs/heads/main.tar.gz | tar -xz -C /opt/
-rm -rf /opt/pluginscpanel && mv /opt/pluginscpanel-main /opt/pluginscpanel
-bash /opt/pluginscpanel/usertools/install.sh
+cd /root
+rm -rf pluginscpanel pluginscpanel-main
+wget -qO- https://github.com/guigallina27/pluginscpanel/archive/refs/heads/main.tar.gz | tar -xz
+mv pluginscpanel-main pluginscpanel
+bash /root/pluginscpanel/usertools/install.sh
 ```
 
-Para atualizar, rode o mesmo bloco — ele baixa a versão mais recente, sobrescreve e reinstala.
+Isso é tudo — o `install.sh` cuida do processo completo.
 
-O instalador:
-- Copia os arquivos para os diretórios oficiais do cPanel
-- Registra os dois AppConfigs (WHM + cPanel)
-- Define permissões e owners corretos
-- Cria o AdminBin que permite ao usuário cPanel acionar o pkill/fixhomedirperms com privilégio de root de forma controlada
+### O que o install.sh faz
 
-Depois da instalação:
+1. Copia `whm/addon_usertools.cgi` → `/usr/local/cpanel/whostmgr/docroot/cgi/addons/usertools/`, owner `root:root`, modo `0755`.
+2. Copia `cpanel/usertools.live.pl` → `/usr/local/cpanel/base/frontend/jupiter/usertools/`, owner `cpanel:cpanel`, modo `0755`.
+3. Copia `bin/usertools` → `/usr/local/cpanel/bin/admin/Cpanel/usertools`, owner `root:root`, modo `0700` (só root pode ler/executar).
+4. Copia `bin/usertools.conf` → mesmo diretório do AdminBin (define `mode=full`).
+5. Registra os dois AppConfigs chamando `/usr/local/cpanel/bin/register_appconfig`.
+6. Dispara `/usr/local/cpanel/scripts/rebuild_sprites` para o cPanel atualizar os ícones.
 
-1. **WHM → Home → Feature Manager** — adicione a feature `usertools` ao plano padrão (ou aos planos em que quiser liberar o ícone no cPanel).
-2. **WHM → Home → Plugins → Ferramentas do Usuário** — root e revendedores já enxergam.
-3. **cPanel do cliente** — se a feature estiver ativa no plano dele, aparece a seção "Ferramentas".
+Operação é idempotente: rodar de novo apenas sobrescreve os arquivos e refaz os registros (útil para atualização).
+
+## Pós-instalação (manual, uma vez)
+
+- **WHM → Home → Feature Manager** — adicione a feature `usertools` aos planos que devem enxergar o ícone no cPanel do cliente.
+- **WHM → Plugins → Ferramentas do Usuário** — já aparece automaticamente para root e revendedores.
+- **cPanel do cliente** — com a feature liberada no plano, aparece a seção "Ferramentas".
+
+## Atualização
+
+Mesmo comando da instalação — baixa o `main` atual, sobrescreve e reinstala sem perder nada.
 
 ## Desinstalação
 
 ```bash
-bash /opt/pluginscpanel/usertools/uninstall.sh
+bash /root/pluginscpanel/usertools/uninstall.sh
 ```
 
 Remove arquivos, desregistra AppConfigs e apaga o AdminBin.
