@@ -20,6 +20,7 @@ use JSON::XS                         ();
 use Whostmgr::ACLS                   ();
 use Whostmgr::AcctInfo::Owner        ();
 use Whostmgr::Accounts               ();
+use Whostmgr::HTMLInterface          ();
 use Cpanel::AcctUtils::Account       ();
 
 Whostmgr::ACLS::init_acls();
@@ -241,21 +242,28 @@ sub _fix_extra_docroots {
 sub render_ui {
     my ($role) = @_;
 
-    print "Content-type: text/html; charset=utf-8\r\n\r\n";
-    print _html_page($role);
+    # URL absoluta do próprio script — usado pelo JS para as chamadas AJAX.
+    # Com URL relativa, o wrapper do WHM devolve HTML em vez do JSON do CGI.
+    my $self_url = $ENV{'SCRIPT_NAME'}
+        // '/cgi/addons/usertools/addon_usertools.cgi';
+    $self_url =~ s/[<>'"&]//g;
+
+    # defheader imprime Content-type e abre o chrome nativo do WHM
+    # (sidebar, header, breadcrumbs). Assim o plugin renderiza inline no WHM
+    # em vez de carregar uma página standalone fora do layout.
+    Whostmgr::HTMLInterface::defheader( 'Ferramentas do Usuário',
+        '', $self_url );
+
+    print _html_body( $role, $self_url );
+
+    Whostmgr::HTMLInterface::deffooter();
 }
 
-sub _html_page {
-    my ($role) = @_;
+sub _html_body {
+    my ( $role, $self_url ) = @_;
     my $role_label = $role eq 'root' ? 'ROOT' : 'REVENDEDOR';
 
     return <<"HTML";
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ferramentas do Usuário — WHM</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons\@1.11.3/font/bootstrap-icons.min.css">
 <style>
 :root {
@@ -286,36 +294,35 @@ sub _html_page {
     --color-shadow: rgba(0,0,0,0.4);
   }
 }
-* { box-sizing: border-box; }
-body {
+.usertools-scope * { box-sizing: border-box; }
+.usertools-scope {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--color-bg-primary);
   color: var(--color-text-primary);
-  margin: 0; padding: 24px; font-size: 14px; line-height: 1.5;
+  padding: 24px 0; font-size: 14px; line-height: 1.5;
 }
-.container { max-width: 900px; margin: 0 auto; }
-.card {
+.usertools-scope .container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+.usertools-scope .card {
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 24px; margin-bottom: 16px;
   box-shadow: 0 1px 3px var(--color-shadow);
 }
-.card-header {
+.usertools-scope .card-header {
   display: flex; align-items: center; gap: 14px;
   margin-bottom: 20px; padding-bottom: 16px;
   border-bottom: 1px solid var(--color-border);
 }
-.card-header .icon-wrap {
+.usertools-scope .card-header .icon-wrap {
   width: 48px; height: 48px; border-radius: 10px;
   background: color-mix(in srgb, var(--color-accent) 15%, transparent);
   display: flex; align-items: center; justify-content: center;
   color: var(--color-accent); font-size: 24px; flex-shrink: 0;
 }
-.card-header h2 { margin: 0; font-size: 18px; font-weight: 700; }
-.card-header p { margin: 4px 0 0; font-size: 13px; color: var(--color-text-muted); }
-label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; }
-select, input {
+.usertools-scope .card-header h2 { margin: 0; font-size: 18px; font-weight: 700; }
+.usertools-scope .card-header p { margin: 4px 0 0; font-size: 13px; color: var(--color-text-muted); }
+.usertools-scope label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; }
+.usertools-scope select, .usertools-scope input {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--color-border);
@@ -325,71 +332,71 @@ select, input {
   font-size: 14px;
   font-family: inherit;
 }
-select:focus, input:focus {
+.usertools-scope select:focus, .usertools-scope input:focus {
   outline: none;
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 20%, transparent);
 }
-.btn-group { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
-.btn {
+.usertools-scope .btn-group { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+.usertools-scope .ut-btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 10px 18px; border: none; border-radius: 8px;
   font-size: 14px; font-weight: 600; cursor: pointer;
   transition: background 0.15s, transform 0.05s;
   font-family: inherit;
 }
-.btn:hover:not(:disabled) { transform: translateY(-1px); }
-.btn:active:not(:disabled) { transform: translateY(0); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-danger  { background: var(--color-error); color: #fff; }
-.btn-danger:hover:not(:disabled)  { background: #B91C1C; }
-.btn-primary { background: var(--color-accent); color: #fff; }
-.btn-primary:hover:not(:disabled) { background: var(--color-accent-hover); }
-.result {
+.usertools-scope .ut-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.usertools-scope .ut-btn:active:not(:disabled) { transform: translateY(0); }
+.usertools-scope .ut-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.usertools-scope .ut-btn-danger  { background: var(--color-error); color: #fff; }
+.usertools-scope .ut-btn-danger:hover:not(:disabled)  { background: #B91C1C; }
+.usertools-scope .ut-btn-primary { background: var(--color-accent); color: #fff; }
+.usertools-scope .ut-btn-primary:hover:not(:disabled) { background: var(--color-accent-hover); }
+.usertools-scope .result {
   margin-top: 20px; padding: 12px 16px;
   border-radius: 8px; display: none; font-size: 13px;
   word-break: break-word;
 }
-.result.show { display: block; }
-.result.success {
+.usertools-scope .result.show { display: block; }
+.usertools-scope .result.success {
   background: color-mix(in srgb, var(--color-success) 12%, transparent);
   color: var(--color-success);
   border: 1px solid color-mix(in srgb, var(--color-success) 40%, transparent);
 }
-.result.error {
+.usertools-scope .result.error {
   background: color-mix(in srgb, var(--color-error) 12%, transparent);
   color: var(--color-error);
   border: 1px solid color-mix(in srgb, var(--color-error) 40%, transparent);
 }
-.badge {
+.usertools-scope .ut-badge {
   display: inline-block; padding: 2px 8px; border-radius: 4px;
   background: var(--color-accent); color: #fff;
   font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
   margin-left: 8px;
 }
-.spinner {
+.usertools-scope .spinner {
   display: inline-block; width: 14px; height: 14px;
   border: 2px solid currentColor; border-right-color: transparent;
-  border-radius: 50%; animation: spin 0.75s linear infinite;
+  border-radius: 50%; animation: ut-spin 0.75s linear infinite;
 }
-\@keyframes spin { to { transform: rotate(360deg); } }
-.info-list {
+\@keyframes ut-spin { to { transform: rotate(360deg); } }
+.usertools-scope .info-list {
   margin: 0 0 16px; padding: 12px 16px;
   background: var(--color-bg-surface);
   border-left: 3px solid var(--color-info);
   border-radius: 6px; font-size: 13px;
   color: var(--color-text-secondary);
 }
-.info-list strong { color: var(--color-text-primary); }
+.usertools-scope .info-list strong { color: var(--color-text-primary); }
 </style>
-</head>
-<body>
+
+<div class="usertools-scope">
 <div class="container">
   <div class="card">
     <div class="card-header">
       <div class="icon-wrap"><i class="bi bi-tools" aria-hidden="true"></i></div>
       <div>
-        <h2>Ferramentas do Usuário<span class="badge">$role_label</span></h2>
+        <h2>Ferramentas do Usuário<span class="ut-badge">$role_label</span></h2>
         <p>Finaliza processos e corrige owner/permissões do diretório home.</p>
       </div>
     </div>
@@ -406,11 +413,11 @@ select:focus, input:focus {
     </select>
 
     <div class="btn-group">
-      <button id="btn-kill" type="button" class="btn btn-danger" disabled>
+      <button id="btn-kill" type="button" class="ut-btn ut-btn-danger" disabled>
         <i class="bi bi-x-octagon" aria-hidden="true"></i>
         Finalizar Processos
       </button>
-      <button id="btn-fix" type="button" class="btn btn-primary" disabled>
+      <button id="btn-fix" type="button" class="ut-btn ut-btn-primary" disabled>
         <i class="bi bi-wrench-adjustable" aria-hidden="true"></i>
         Corrigir Permissões &amp; Owner
       </button>
@@ -419,11 +426,12 @@ select:focus, input:focus {
     <div id="result" class="result" role="status" aria-live="polite"></div>
   </div>
 </div>
+</div><!-- /.usertools-scope -->
 
 <script>
 (function() {
   'use strict';
-  const URL_SELF = 'addon_usertools.cgi';
+  const URL_SELF = '$self_url';
   const sel     = document.getElementById('user-select');
   const btnKill = document.getElementById('btn-kill');
   const btnFix  = document.getElementById('btn-fix');
@@ -504,7 +512,5 @@ select:focus, input:focus {
   loadUsers();
 })();
 </script>
-</body>
-</html>
 HTML
 }

@@ -66,15 +66,21 @@ sub render_ui {
     my $cpanel = Cpanel::LiveAPI->new();
     my $user   = $ENV{'REMOTE_USER'} || '';
 
+    # URL absoluta do próprio script, para o JS não depender de URL relativa
+    # (que pode falhar dentro do wrapper do cPanel).
+    my $self_url = $ENV{'SCRIPT_NAME'}
+        // '/frontend/jupiter/usertools/usertools.live.pl';
+    $self_url =~ s/[<>'"&]//g;
+
     print "Content-type: text/html; charset=utf-8\r\n\r\n";
     print $cpanel->header('Ferramentas');
-    print _body_html($user);
+    print _body_html( $user, $self_url );
     print $cpanel->footer();
     $cpanel->end();
 }
 
 sub _body_html {
-    my ($user) = @_;
+    my ( $user, $self_url ) = @_;
     $user =~ s/[<>&"']//g;  # sanitização mínima para exibição
 
     return <<"HTML";
@@ -243,7 +249,7 @@ sub _body_html {
 <script>
 (function() {
   'use strict';
-  const URL_SELF = 'usertools.live.pl';
+  const URL_SELF = '$self_url';
   const btnKill = document.getElementById('btn-kill');
   const btnFix  = document.getElementById('btn-fix');
   const result  = document.getElementById('ut-result');
