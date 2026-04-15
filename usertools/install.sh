@@ -13,6 +13,7 @@ SRC_DIR="$(cd "$(dirname "$0")" && pwd)"
 WHM_ADDON_DIR="/usr/local/cpanel/whostmgr/docroot/cgi/addons/${PLUGIN_NAME}"
 CPANEL_FRONTEND_DIR="/usr/local/cpanel/base/frontend/jupiter/${PLUGIN_NAME}"
 ADMINBIN_DIR="/usr/local/cpanel/bin/admin/Cpanel"
+TEMPLATES_DIR="/var/cpanel/addons/${PLUGIN_NAME}/templates"
 
 if [[ $EUID -ne 0 ]]; then
     echo "[ERRO] Este instalador precisa rodar como root."
@@ -32,6 +33,13 @@ mkdir -p "${WHM_ADDON_DIR}"
 install -o root -g root -m 0755 \
     "${SRC_DIR}/whm/addon_usertools.cgi" \
     "${WHM_ADDON_DIR}/addon_usertools.cgi"
+
+# --- Template Toolkit (chrome nativo do WHM) ---------------------------------
+echo "  - Template WHM em ${TEMPLATES_DIR}"
+mkdir -p "${TEMPLATES_DIR}"
+install -o root -g root -m 0644 \
+    "${SRC_DIR}/whm/templates/main.tmpl" \
+    "${TEMPLATES_DIR}/main.tmpl"
 
 # --- cPanel (Jupiter theme) --------------------------------------------------
 echo "  - cPanel frontend em ${CPANEL_FRONTEND_DIR}"

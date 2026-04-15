@@ -17,6 +17,7 @@ echo "==> Desinstalando ${PLUGIN_NAME}..."
 
 rm -rf "/usr/local/cpanel/whostmgr/docroot/cgi/addons/${PLUGIN_NAME}"
 rm -rf "/usr/local/cpanel/base/frontend/jupiter/${PLUGIN_NAME}"
+rm -rf "/var/cpanel/addons/${PLUGIN_NAME}"
 rm -f  "/usr/local/cpanel/bin/admin/Cpanel/${PLUGIN_NAME}"
 rm -f  "/usr/local/cpanel/bin/admin/Cpanel/${PLUGIN_NAME}.conf"
 

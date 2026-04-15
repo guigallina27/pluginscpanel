@@ -1,0 +1,280 @@
+[%-
+    # Template master do WHM (Jupiter) — injeta sidebar, header, breadcrumbs
+    # e assets padrão em volta do conteúdo do plugin.
+    USE Whostmgr;
+    SET wrapper_path  = 'master_templates/master.tmpl';
+    SET wrapper_theme = 'bootstrap';
+-%]
+[% WRAPPER $wrapper_path
+    header = 'Ferramentas do Usuário',
+    theme  = wrapper_theme
+-%]
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+.usertools-scope {
+  --color-bg-primary: #F8F9FA;
+  --color-bg-secondary: #FFFFFF;
+  --color-bg-surface: #F1F3F5;
+  --color-text-primary: #1A1A2E;
+  --color-text-secondary: #4A4A5E;
+  --color-text-muted: #6B7280;
+  --color-accent: #2563EB;
+  --color-accent-hover: #1D4ED8;
+  --color-border: #E5E7EB;
+  --color-shadow: rgba(0,0,0,0.06);
+  --color-success: #16A34A;
+  --color-warning: #D97706;
+  --color-error: #DC2626;
+  --color-info: #0EA5E9;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--color-text-primary);
+  padding: 24px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+@media (prefers-color-scheme: dark) {
+  .usertools-scope {
+    --color-bg-primary: #0F0F13;
+    --color-bg-secondary: #1A1A2E;
+    --color-bg-surface: #1F1F33;
+    --color-text-primary: #E8E8F0;
+    --color-text-secondary: #B8B8C8;
+    --color-text-muted: #8B8BA0;
+    --color-border: #2A2A42;
+    --color-shadow: rgba(0,0,0,0.4);
+  }
+}
+.usertools-scope * { box-sizing: border-box; }
+.usertools-scope .ut-container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+.usertools-scope .ut-card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px; margin-bottom: 16px;
+  box-shadow: 0 1px 3px var(--color-shadow);
+}
+.usertools-scope .ut-card-header {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 20px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+.usertools-scope .ut-icon-wrap {
+  width: 48px; height: 48px; border-radius: 10px;
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-accent); font-size: 24px; flex-shrink: 0;
+}
+.usertools-scope .ut-title { margin: 0; font-size: 18px; font-weight: 700; }
+.usertools-scope .ut-subtitle { margin: 4px 0 0; font-size: 13px; color: var(--color-text-muted); }
+.usertools-scope .ut-label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; }
+.usertools-scope .ut-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-family: inherit;
+}
+.usertools-scope .ut-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 20%, transparent);
+}
+.usertools-scope .ut-btn-group { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+.usertools-scope .ut-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border: none; border-radius: 8px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, transform 0.05s;
+  font-family: inherit;
+}
+.usertools-scope .ut-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.usertools-scope .ut-btn:active:not(:disabled) { transform: translateY(0); }
+.usertools-scope .ut-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.usertools-scope .ut-btn-danger  { background: var(--color-error); color: #fff; }
+.usertools-scope .ut-btn-danger:hover:not(:disabled)  { background: #B91C1C; }
+.usertools-scope .ut-btn-primary { background: var(--color-accent); color: #fff; }
+.usertools-scope .ut-btn-primary:hover:not(:disabled) { background: var(--color-accent-hover); }
+.usertools-scope .ut-result {
+  margin-top: 20px; padding: 12px 16px;
+  border-radius: 8px; display: none; font-size: 13px;
+  word-break: break-word;
+}
+.usertools-scope .ut-result.show { display: block; }
+.usertools-scope .ut-result.success {
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  color: var(--color-success);
+  border: 1px solid color-mix(in srgb, var(--color-success) 40%, transparent);
+}
+.usertools-scope .ut-result.error {
+  background: color-mix(in srgb, var(--color-error) 12%, transparent);
+  color: var(--color-error);
+  border: 1px solid color-mix(in srgb, var(--color-error) 40%, transparent);
+}
+.usertools-scope .ut-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  background: var(--color-accent); color: #fff;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  margin-left: 8px;
+}
+.usertools-scope .ut-spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid currentColor; border-right-color: transparent;
+  border-radius: 50%; animation: ut-spin 0.75s linear infinite;
+}
+@keyframes ut-spin { to { transform: rotate(360deg); } }
+.usertools-scope .ut-info-list {
+  margin: 0 0 16px; padding: 12px 16px;
+  background: var(--color-bg-surface);
+  border-left: 3px solid var(--color-info);
+  border-radius: 6px; font-size: 13px;
+  color: var(--color-text-secondary);
+}
+.usertools-scope .ut-info-list strong { color: var(--color-text-primary); }
+</style>
+
+<div class="usertools-scope">
+  <div class="ut-container">
+    <div class="ut-card">
+      <div class="ut-card-header">
+        <div class="ut-icon-wrap"><i class="bi bi-tools" aria-hidden="true"></i></div>
+        <div>
+          <h2 class="ut-title">Ferramentas do Usuário<span class="ut-badge">[% data.role_label | html %]</span></h2>
+          <p class="ut-subtitle">Finaliza processos e corrige owner/permissões do diretório home.</p>
+        </div>
+      </div>
+
+      <div class="ut-info-list">
+        <strong>Atenção:</strong> finalizar processos interrompe PHP-FPM,
+        cron, SSH e qualquer aplicação do usuário. Corrigir permissões
+        reescreve owner/grupo e modos do diretório home.
+      </div>
+
+      <label class="ut-label" for="ut-user-select">Selecione a conta cPanel</label>
+      <select id="ut-user-select" class="ut-select" aria-label="Conta cPanel">
+        <option value="">Carregando...</option>
+      </select>
+
+      <div class="ut-btn-group">
+        <button id="ut-btn-kill" type="button" class="ut-btn ut-btn-danger" disabled>
+          <i class="bi bi-x-octagon" aria-hidden="true"></i>
+          Finalizar Processos
+        </button>
+        <button id="ut-btn-fix" type="button" class="ut-btn ut-btn-primary" disabled>
+          <i class="bi bi-wrench-adjustable" aria-hidden="true"></i>
+          Corrigir Permissões &amp; Owner
+        </button>
+      </div>
+
+      <div id="ut-result" class="ut-result" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+  // URL do browser inclui o cpsess token da sessão WHM.
+  // Usar window.location.pathname garante que o fetch mantenha a sessão.
+  var URL_SELF = window.location.pathname;
+
+  var sel     = document.getElementById('ut-user-select');
+  var btnKill = document.getElementById('ut-btn-kill');
+  var btnFix  = document.getElementById('ut-btn-fix');
+  var result  = document.getElementById('ut-result');
+
+  function showResult(ok, msg) {
+    result.className = 'ut-result show ' + (ok ? 'success' : 'error');
+    result.textContent = msg;
+  }
+  function clearResult() { result.className = 'ut-result'; result.textContent = ''; }
+
+  function jsonFetch(url, init) {
+    init = init || {};
+    init.credentials = 'same-origin';
+    init.headers = Object.assign({ 'Accept': 'application/json' }, init.headers || {});
+    return fetch(url, init).then(function(r) {
+      var ct = r.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        return r.text().then(function(txt) {
+          throw new Error('Resposta não-JSON (status ' + r.status + '). Confira /usr/local/cpanel/logs/error_log.');
+        });
+      }
+      return r.json();
+    });
+  }
+
+  function loadUsers() {
+    jsonFetch(URL_SELF + '?action=list_users').then(function(d) {
+      if (!d.success) { showResult(false, d.message || 'Falha ao listar usuários.'); return; }
+      sel.innerHTML = '';
+      var placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = d.users.length ? '— escolher —' : 'Nenhuma conta disponível';
+      sel.appendChild(placeholder);
+      d.users.forEach(function(u) {
+        var o = document.createElement('option');
+        o.value = u.user;
+        o.textContent = u.user + (u.domain ? '  ·  ' + u.domain : '');
+        sel.appendChild(o);
+      });
+    }).catch(function(e) {
+      sel.innerHTML = '<option value="">Erro ao carregar</option>';
+      showResult(false, e.message || String(e));
+    });
+  }
+
+  sel.addEventListener('change', function() {
+    var has = !!sel.value;
+    btnKill.disabled = !has;
+    btnFix.disabled  = !has;
+    clearResult();
+  });
+
+  function runAction(act, btn, confirmMsg) {
+    if (!sel.value) return;
+    if (!confirm(confirmMsg)) return;
+
+    var originalHTML = btn.innerHTML;
+    btnKill.disabled = true; btnFix.disabled = true;
+    btn.innerHTML = '<span class="ut-spinner"></span> Executando...';
+    clearResult();
+
+    var form = new FormData();
+    form.append('action', act);
+    form.append('user', sel.value);
+
+    jsonFetch(URL_SELF, { method: 'POST', body: form }).then(function(d) {
+      showResult(!!d.success, d.message || (d.success ? 'Concluído.' : 'Falhou.'));
+    }).catch(function(e) {
+      showResult(false, e.message || String(e));
+    }).then(function() {
+      btn.innerHTML = originalHTML;
+      btnKill.disabled = false; btnFix.disabled = false;
+    });
+  }
+
+  btnKill.addEventListener('click', function() {
+    runAction(
+      'kill_procs', btnKill,
+      'Finalizar TODOS os processos de "' + sel.value + '"?\n\n' +
+      'Isso mata sites, cron, SSH e qualquer processo do usuário.'
+    );
+  });
+  btnFix.addEventListener('click', function() {
+    runAction(
+      'fix_perms', btnFix,
+      'Corrigir owner e permissões do /home/' + sel.value + '?\n\n' +
+      'Isso pode levar alguns segundos em contas grandes.'
+    );
+  });
+
+  loadUsers();
+})();
+</script>
+
+[% END %]

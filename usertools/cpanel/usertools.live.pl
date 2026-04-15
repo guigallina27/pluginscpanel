@@ -249,7 +249,7 @@ sub _body_html {
 <script>
 (function() {
   'use strict';
-  const URL_SELF = '$self_url';
+  const URL_SELF = window.location.pathname;
   const btnKill = document.getElementById('btn-kill');
   const btnFix  = document.getElementById('btn-fix');
   const result  = document.getElementById('ut-result');
