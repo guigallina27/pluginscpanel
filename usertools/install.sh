@@ -95,18 +95,20 @@ DYNEOF
     chmod 0644 "${DYNAMICUI_CONF}"
 fi
 
-# Icone SVG do plugin. IMPORTANTE: o Jupiter resolve 'file=>usertools' do
-# dynamicui buscando em /assets/application_icons/<name>.svg, NAO no diretorio
-# do plugin em /3rdparty/. Colocar o SVG no lugar errado deixa o icone em branco.
+# Icone PNG do plugin. IMPORTANTE: o Jupiter resolve 'file=>usertools' do
+# dynamicui buscando em /assets/application_icons/<name>.(png|svg), NAO no
+# diretorio do plugin em /3rdparty/. Usamos PNG para evitar o problema de
+# <defs>/gradientes do SVG serem stripados pelo sprite_generator.
+# Remove SVG antigo (de versoes anteriores) para forcar o uso do PNG.
 ICON_DIR="/usr/local/cpanel/base/frontend/jupiter/assets/application_icons"
-ICON_DEST="${ICON_DIR}/${PLUGIN_NAME}.svg"
-if [[ -d "${ICON_DIR}" ]] && grep -q "^icon_base64=" "${SRC_DIR}/cpanel/usertools.conf" 2>/dev/null; then
-    grep "^icon_base64=" "${SRC_DIR}/cpanel/usertools.conf" \
-        | sed "s/^icon_base64=//" \
-        | base64 -d > "${ICON_DEST}" 2>/dev/null || true
-    chown root:root "${ICON_DEST}" 2>/dev/null || true
-    chmod 0644 "${ICON_DEST}" 2>/dev/null || true
-    echo "  - Icone SVG em ${ICON_DEST}"
+if [[ -d "${ICON_DIR}" ]]; then
+    rm -f "${ICON_DIR}/${PLUGIN_NAME}.svg" 2>/dev/null || true
+    if [[ -f "${SRC_DIR}/cpanel/${PLUGIN_NAME}.png" ]]; then
+        install -o root -g root -m 0644 \
+            "${SRC_DIR}/cpanel/${PLUGIN_NAME}.png" \
+            "${ICON_DIR}/${PLUGIN_NAME}.png"
+        echo "  - Icone PNG em ${ICON_DIR}/${PLUGIN_NAME}.png"
+    fi
 fi
 
 # --- AdminBin cleanup --------------------------------------------------------
