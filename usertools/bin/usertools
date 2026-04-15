@@ -57,140 +57,95 @@ sub KILL_PROCS {
     return {
         success => \1,
         message => "Finalização iniciada ($before processos detectados). "
-            . "Sua sessão pode cair por alguns segundos — recarregue a página se isso acontecer.",
-    };
-}
-
-sub FIX_PERMS {
+            . "Sua sessão pode cair por alguns segundos — recarregue a página se isso sub FIX_PERMS {
     my ($self) = @_;
     my $user = _assert_user( $self->get_caller_username() );
 
-    # 1. Script oficial do cPanel — cobre /home/user, public_html,
-    #    mail/, .ssh/, etc/, cgi-bin/, SUID/SGID indevidos, CageFS.
-    my ( undef, $exit ) = _run_fixhomedirperms($user);
-    $exit = -1 unless defined $exit;
-
-    # 2. Complemento — addon/subdomínios com docroot FORA de
-    #    /home/user/public_html não são normalizados pelo script oficial.
-    #    Lemos /var/cpanel/userdata/user/* e aplicamos chown/chmod padrão.
-    my $extra = _fix_extra_docroots($user);
-
-    my $msg;
-    if ( $exit == 0 ) {
-        $msg = "Owner e permissões corrigidos em /home/$user.";
-        $msg .= " Docroots fora de public_html tratados: $extra." if $extra > 0;
-    }
-    elsif ( $exit == -1 ) {
-        $msg = "Não foi possível localizar /scripts/fixhomedirperms.";
-    }
-    else {
-        $msg = "Falha em fixhomedirperms (código $exit).";
-    }
-
-    return {
-        success => $exit == 0 ? \1 : \0,
-        message => $msg,
-    };
-}
-
-# Roda /scripts/fixhomedirperms com path absoluto; retorna (output, exit).
-# exit=undef se não conseguir nem invocar (script não existe, fork falhou).
-sub _run_fixhomedirperms {
-    my ($user) = @_;
-
-    my @candidates = qw(
-        /scripts/fixhomedirperms
-        /usr/local/cpanel/scripts/fixhomedirperms
-    );
-    my $script;
-    for my $c (@candidates) {
-        if ( -e $c ) { $script = $c; last; }
-    }
-    return ( "Script não encontrado", undef ) unless $script;
-
-    my $pid = open( my $fh, '-|' );
-    return ( "Falha no fork: $!", undef ) unless defined $pid;
-
-    if ( $pid == 0 ) {
-        open STDERR, '>&', \*STDOUT;
-        exec( $script, $user ) or do { print "exec falhou: $!\n"; exit 127; };
-    }
-
-    my $output = do { local $/; <$fh> };
-    close $fh;
-    my $exit = $? >> 8;
-    return ( $output, $exit );
-}
-
-# ---------------------------------------------------------------------------
-# Descobre os documentroots do usuário que estão FORA de public_html e
-# aplica: chown -R user:user, dirs 755, arquivos 644, .cgi/.pl 755,
-# docroot em si 755. Retorna quantos docroots foram tratados.
-#
-# Os arquivos em /var/cpanel/userdata/<user>/* são YAML escritos pelo
-# cPanel; para cada domínio/addon/subdomínio há um arquivo com a chave
-# documentroot: <caminho>.
-sub _fix_extra_docroots {
-    my ($user) = @_;
-
     my @pw = getpwnam($user);
-    return 0 unless @pw;
+    if (!@pw) {
+        return { success => \0, message => "Usuário não encontrado." };
+    }
     my $home = $pw[7];
-    return 0 unless defined $home && -d $home;
+    if (!defined $home || !-d $home || $home eq '/' || $home eq '/root') {
+        return { success => \0, message => "Home directory inválido." };
+    }
 
-    my $public_html  = "$home/public_html";
+    # 1. Obter grupo nobody para setar permissão na raiz do public_html
+    my $nobody_gid;
+    my @nb_pw = getgrnam('nobody');
+    $nobody_gid = $nb_pw[2] if @nb_pw;
+    my $user_uid = $pw[2];
+    my $user_gid = $pw[3];
+
+    # 2. Ajuste superficial recursivo no diretório $home nativo (ignora symlinks internos)
+    system('/bin/chmod', '711', $home);
+    system('/bin/chown', "$user:$user", $home);
+
+    # 3. Descobrir recursivamente todas as pastas documentroot (public_html e addondomains)
+    my @docroots;
+    my $public_html = "$home/public_html";
+    push @docroots, $public_html if -d $public_html;
+
     my $userdata_dir = "/var/cpanel/userdata/$user";
-    return 0 unless -d $userdata_dir;
+    if (-d $userdata_dir) {
+        opendir(my $dh, $userdata_dir);
+        if ($dh) {
+            my @files;
+            while (my $entry = readdir $dh) {
+                next if $entry =~ /^\./ || $entry =~ /\.cache$/ || $entry =~ /_SSL$/ || $entry eq 'main';
+                push @files, "$userdata_dir/$entry" if -f "$userdata_dir/$entry";
+            }
+            closedir $dh;
 
-    opendir( my $dh, $userdata_dir ) or return 0;
-    my @files;
-    while ( my $entry = readdir $dh ) {
-        next if $entry =~ /^\./;
-        next if $entry =~ /\.cache$/;
-        next if $entry =~ /_SSL$/;
-        next if $entry eq 'main';
-        my $path = "$userdata_dir/$entry";
-        push @files, $path if -f $path;
-    }
-    closedir $dh;
-
-    my ( %seen, @docroots );
-    for my $file (@files) {
-        open( my $fh, '<', $file ) or next;
-        while ( my $line = <$fh> ) {
-            next unless $line =~ /^\s*documentroot\s*:\s*(.+?)\s*$/;
-            my $dr = $1;
-            $dr =~ s/^["']|["']$//g;
-
-            # Só nos interessa docroot fora de public_html e dentro do home.
-            next if $dr eq $public_html;
-            next if $dr =~ m{^\Q$public_html\E/};
-            next unless $dr =~ m{^\Q$home\E/};
-            next if $seen{$dr}++;
-            push @docroots, $dr if -d $dr;
+            my %seen;
+            $seen{$public_html} = 1;
+            for my $file (@files) {
+                open(my $fh, '<', $file) or next;
+                while (my $line = <$fh>) {
+                    next unless $line =~ /^\s*documentroot\s*:\s*(.+?)\s*$/;
+                    my $dr = $1;
+                    $dr =~ s/^["']|["']$//g;
+                    # Apenas caminhos estritos dentro do $home
+                    next unless $dr =~ m{^\Q$home\E/};
+                    next if $seen{$dr}++;
+                    push @docroots, $dr if -d $dr;
+                }
+                close $fh;
+            }
         }
-        close $fh;
     }
 
+    # 4. Ajustar restritamente os diretórios e public_html files
     my $count = 0;
     for my $dr (@docroots) {
-        system( '/bin/chown', '-R', "$user:$user", $dr );
-        system( '/usr/bin/find', $dr, '-type', 'd',
-            '-exec', '/bin/chmod', '755', '{}', '+' );
-        system( '/usr/bin/find', $dr, '-type', 'f',
-            '-exec', '/bin/chmod', '644', '{}', '+' );
-        system( '/usr/bin/find', $dr, '-type', 'f',
-            '(', '-name', '*.cgi', '-o', '-name', '*.pl', ')',
-            '-exec', '/bin/chmod', '755', '{}', '+' );
-        system( '/bin/chmod', '755', $dr );
+        # Todo escopo de arquivos dos docroots ganha group user e owner user
+        system('/bin/chown', '-R', "$user:$user", $dr);
+        
+        # Corrige dirs para 755 e arquivos para 644
+        system('/usr/bin/find', $dr, '-type', 'd', '-exec', '/bin/chmod', '755', '{}', '+');
+        system('/usr/bin/find', $dr, '-type', 'f', '-exec', '/bin/chmod', '644', '{}', '+');
+        
+        # Re-ajusta CGI files comuns
+        system('/usr/bin/find', $dr, '-type', 'f', '(', '-name', '*.cgi', '-o', '-name', '*.pl', ')', '-exec', '/bin/chmod', '755', '{}', '+');
+        
+        if ($dr eq $public_html) {
+            # Conf Padrão de Servidores EA4 pra public_html root container = (user:nobody 750)
+            system('/bin/chmod', '750', $public_html);
+            if (defined $nobody_gid) {
+                chown($user_uid, $nobody_gid, $public_html);
+            }
+        } else {
+            system('/bin/chmod', '755', $dr);
+        }
         $count++;
     }
 
-    return $count;
+    return {
+        success => \1,
+        message => "Sucesso. Owner e permissões corrigidos na sua conta ($count docroots normalizados).",
+    };
 }
 
-# ---------------------------------------------------------------------------
-# Validação de nome de usuário.
 # Mesmo vindo do cPanel (fonte confiável), fazemos untaint explícito.
 sub _assert_user {
     my ($user) = @_;
