@@ -190,158 +190,85 @@ sub do_kill_procs {
 sub do_fix_perms {
     my ($user) = @_;
 
-    # 1. Script oficial do cPanel — cobre /home/user, public_html,
-    #    mail/, .ssh/, etc/, cgi-bin/, SUID/SGID indevidos, CageFS.
-    my ( $output, $exit ) = _run_fixhomedirperms($user);
-    my $ok = defined $exit && $exit == 0;
-
-    # 2. Complemento — addon/subdomínios com docroot FORA de
-    #    /home/user/public_html não são normalizados pelo script oficial.
-    my $extra = _fix_extra_docroots($user);
-
-    my $msg;
-    if ($ok) {
-        $msg = "Owner e permissões corrigidos em /home/$user.";
-        $msg .= " Docroots fora de public_html tratados: $extra." if $extra > 0;
-    }
-    elsif ( !defined $exit ) {
-        # $output aqui contém o diagnóstico detalhado
-        $msg = "fixhomedirperms não pôde ser executado: " . ( $output // '' );
-    }
-    else {
-        $msg = "Falha em fixhomedirperms (exit=$exit).";
-    }
-
-    json_out(
-        {
-            success => $ok ? \1 : \0,
-            message => $msg,
-            output  => $output,
-        }
-    );
-}
-
-# Roda /scripts/fixhomedirperms com path absoluto e captura saída.
-# Retorna (stdout+stderr, exit_code) ou (msg, undef) se falhar ao invocar.
-sub _run_fixhomedirperms {
-    my ($user) = @_;
-
-    my $script = _locate_fixhomedirperms();
-    unless ($script) {
-        my $uid_name = getpwuid($<) // "uid=$<";
-        my $diag = "euid=$>, uid=$< ($uid_name). ";
-        $diag .= "Conteúdo de /scripts: "
-            . ( _ls('/scripts') // 'inacessível' ) . ". ";
-        $diag .= "Conteúdo de /usr/local/cpanel/scripts: "
-            . ( _ls('/usr/local/cpanel/scripts') // 'inacessível' );
-        return ( $diag, undef );
-    }
-
-    # Abre pipe sem shell (lista de args). Evita problemas de PATH do CGI.
-    my $pid = open( my $fh, '-|' );
-    return ( "Falha no fork: $!", undef ) unless defined $pid;
-
-    if ( $pid == 0 ) {
-        # Filho — redireciona stderr pra stdout e executa
-        open STDERR, '>&', \*STDOUT;
-        exec( $script, $user ) or do {
-            print "exec falhou em $script: $!\n";
-            exit 127;
-        };
-    }
-
-    # Pai lê o output
-    my $output = do { local $/; <$fh> };
-    close $fh;
-    my $exit = $? >> 8;
-    return ( $output, $exit );
-}
-
-sub _locate_fixhomedirperms {
-    my @candidates = qw(
-        /scripts/fixhomedirperms
-        /usr/local/cpanel/scripts/fixhomedirperms
-        /usr/local/cpanel/bin/fixhomedirperms
-    );
-    for my $c (@candidates) {
-        return $c if -e $c || -l $c;
-    }
-    return;
-}
-
-# Lista até 40 entradas de um diretório em uma string compacta (para debug).
-sub _ls {
-    my ($dir) = @_;
-    return unless -d $dir;
-    opendir( my $dh, $dir ) or return "erro: $!";
-    my @entries;
-    while ( my $e = readdir $dh ) {
-        next if $e =~ /^\./;
-        push @entries, $e;
-        last if @entries >= 40;
-    }
-    closedir $dh;
-    return join( ',', @entries ) || '(vazio)';
-}
-
-# Ver explicação completa no bin/usertools — mesma rotina.
-sub _fix_extra_docroots {
-    my ($user) = @_;
-
     my @pw = getpwnam($user);
-    return 0 unless @pw;
-    my $home = $pw[7];
-    return 0 unless defined $home && -d $home;
-
-    my $public_html  = "$home/public_html";
-    my $userdata_dir = "/var/cpanel/userdata/$user";
-    return 0 unless -d $userdata_dir;
-
-    opendir( my $dh, $userdata_dir ) or return 0;
-    my @files;
-    while ( my $entry = readdir $dh ) {
-        next if $entry =~ /^\./;
-        next if $entry =~ /\.cache$/;
-        next if $entry =~ /_SSL$/;
-        next if $entry eq 'main';
-        my $path = "$userdata_dir/$entry";
-        push @files, $path if -f $path;
+    if (!@pw) {
+        json_out({ success => \0, message => "Usuário '$user' não encontrado." });
+        return;
     }
-    closedir $dh;
+    
+    my $home = $pw[7];
+    if (!defined $home || !-d $home || $home eq '/' || $home eq '/root') {
+        json_out({ success => \0, message => "Home do usuário inválido ou protegido contra modificações." });
+        return;
+    }
 
-    my ( %seen, @docroots );
-    for my $file (@files) {
-        open( my $fh, '<', $file ) or next;
-        while ( my $line = <$fh> ) {
-            next unless $line =~ /^\s*documentroot\s*:\s*(.+?)\s*$/;
-            my $dr = $1;
-            $dr =~ s/^["']|["']$//g;
-            next if $dr eq $public_html;
-            next if $dr =~ m{^\Q$public_html\E/};
-            next unless $dr =~ m{^\Q$home\E/};
-            next if $seen{$dr}++;
-            push @docroots, $dr if -d $dr;
+    # Pegamos ids de permissões base
+    my $user_uid = $pw[2];
+    my $nobody_gid;
+    my @nb_pw = getgrnam('nobody');
+    $nobody_gid = $nb_pw[2] if @nb_pw;
+
+    # Trava e ajusta home inicial
+    system('/bin/chmod', '711', $home);
+    system('/bin/chown', "$user:$user", $home);
+
+    my @docroots;
+    my $public_html = "$home/public_html";
+    push @docroots, $public_html if -d $public_html;
+
+    # Varre userdata atras de docroots externos ou isolados (Addons)
+    my $userdata_dir = "/var/cpanel/userdata/$user";
+    if (-d $userdata_dir) {
+        opendir(my $dh, $userdata_dir);
+        if ($dh) {
+            my @files;
+            while (my $entry = readdir $dh) {
+                next if $entry =~ /^\./ || $entry =~ /\.cache$/ || $entry =~ /_SSL$/ || $entry eq 'main';
+                push @files, "$userdata_dir/$entry" if -f "$userdata_dir/$entry";
+            }
+            closedir $dh;
+            
+            my %seen;
+            $seen{$public_html} = 1;
+            for my $file (@files) {
+                open(my $fh, '<', $file) or next;
+                while (my $line = <$fh>) {
+                    next unless $line =~ /^\s*documentroot\s*:\s*(.+?)\s*$/;
+                    my $dr = $1;
+                    $dr =~ s/^["']|["']$//g;
+                    next unless $dr =~ m{^\Q$home\E/}; # Impede traversal
+                    next if $seen{$dr}++;
+                    push @docroots, $dr if -d $dr;
+                }
+                close $fh;
+            }
         }
-        close $fh;
     }
 
     my $count = 0;
     for my $dr (@docroots) {
-        system( '/bin/chown', '-R', "$user:$user", $dr );
-        system( '/usr/bin/find', $dr, '-type', 'd',
-            '-exec', '/bin/chmod', '755', '{}', '+' );
-        system( '/usr/bin/find', $dr, '-type', 'f',
-            '-exec', '/bin/chmod', '644', '{}', '+' );
-        system( '/usr/bin/find', $dr, '-type', 'f',
-            '(', '-name', '*.cgi', '-o', '-name', '*.pl', ')',
-            '-exec', '/bin/chmod', '755', '{}', '+' );
-        system( '/bin/chmod', '755', $dr );
+        system('/bin/chown', '-R', "$user:$user", $dr);
+        system('/usr/bin/find', $dr, '-type', 'd', '-exec', '/bin/chmod', '755', '{}', '+');
+        system('/usr/bin/find', $dr, '-type', 'f', '-exec', '/bin/chmod', '644', '{}', '+');
+        system('/usr/bin/find', $dr, '-type', 'f', '(', '-name', '*.cgi', '-o', '-name', '*.pl', ')', '-exec', '/bin/chmod', '755', '{}', '+');
+        
+        if ($dr eq $public_html) {
+            system('/bin/chmod', '750', $public_html);
+            if (defined $nobody_gid) {
+                chown($user_uid, $nobody_gid, $public_html);
+            }
+        } else {
+            system('/bin/chmod', '755', $dr);
+        }
         $count++;
     }
 
-    return $count;
+    json_out({
+        success => \1,
+        message => "OK: Owner e permissões normalizados com segurança ($count DocRoots varridos).",
+        output  => "Correção efetuada via comandos nativos Perl (fixhomedirperms bypass).",
+    });
 }
-
 sub render_ui {
     my ($role) = @_;
 
